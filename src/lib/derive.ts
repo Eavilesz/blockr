@@ -1,5 +1,5 @@
 import type { BlockrState, Category, Running, Task } from '../types'
-import { currentWeekRange, dateStr, isInWeek } from './time'
+import { dateStr, isInWeek, workWeekRange } from './time'
 
 /** Time spent on a task right now, including any live in-progress run, capped at plannedSeconds. */
 export function effectiveSpent(task: Task, running: Running | null, now: number): number {
@@ -35,14 +35,20 @@ export function todayTotals(state: BlockrState, now: number): Record<Category, n
   return totals
 }
 
-/** Seconds tracked per category this week (Mon-Sun), including the live running session. */
-export function weekTotals(state: BlockrState, now: number): Record<Category, number> {
-  const week = currentWeekRange(new Date(now))
+/** Seconds tracked per category in the work week (Sun-Thu) containing `now`, shifted by
+ *  `weekOffset` whole weeks. Includes the live running session only when that session's
+ *  day falls inside the queried week. */
+export function weekTotals(
+  state: BlockrState,
+  now: number,
+  weekOffset = 0,
+): Record<Category, number> {
+  const week = workWeekRange(new Date(now), weekOffset)
   const totals = zeroTotals()
   for (const s of state.sessions) {
     if (isInWeek(s.date, week)) totals[s.category] += s.durationSeconds
   }
   const live = liveContribution(state, now)
-  if (live) totals[live.category] += live.seconds
+  if (live && isInWeek(dateStr(new Date(now)), week)) totals[live.category] += live.seconds
   return totals
 }

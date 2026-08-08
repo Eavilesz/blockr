@@ -6,20 +6,33 @@ export function dateStr(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-/** Monday..Sunday date strings (YYYY-MM-DD) for the week containing `d`. */
-export function currentWeekRange(d: Date = new Date()): { start: string; end: string } {
+/** Sunday..Thursday date strings (YYYY-MM-DD) for the work week containing `d`, shifted
+ *  by `weekOffset` whole weeks (negative = past, positive = future). Fri/Sat fall outside
+ *  the work week and are attributed to the work week that starts on the Sunday after them. */
+export function workWeekRange(
+  d: Date = new Date(),
+  weekOffset = 0,
+): { start: string; end: string } {
   const day = d.getDay() // 0 = Sunday .. 6 = Saturday
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const monday = new Date(d)
-  monday.setHours(0, 0, 0, 0)
-  monday.setDate(monday.getDate() + diffToMonday)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  return { start: dateStr(monday), end: dateStr(sunday) }
+  const diffToSunday = -day
+  const sunday = new Date(d)
+  sunday.setHours(0, 0, 0, 0)
+  sunday.setDate(sunday.getDate() + diffToSunday + weekOffset * 7)
+  const thursday = new Date(sunday)
+  thursday.setDate(sunday.getDate() + 4)
+  return { start: dateStr(sunday), end: dateStr(thursday) }
 }
 
 export function isInWeek(date: string, week: { start: string; end: string }): boolean {
   return date >= week.start && date <= week.end
+}
+
+/** "Aug 3 – Aug 7" style label for a {start, end} date-string range. */
+export function formatWeekRangeLabel(week: { start: string; end: string }): string {
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  const start = new Date(`${week.start}T00:00:00`)
+  const end = new Date(`${week.end}T00:00:00`)
+  return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, opts)}`
 }
 
 /** Stopwatch-style H:MM:SS (or MM:SS under an hour) from a whole-second count. */
