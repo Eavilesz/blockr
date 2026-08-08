@@ -18,7 +18,7 @@ export function TodaySummary({
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="grid grid-cols-3 gap-3">
         {CATEGORIES.map((c) => (
-          <div key={c} className="flex flex-col gap-1">
+          <div key={c} className="flex flex-col items-center gap-1">
             <span
               className={`flex items-center gap-1.5 text-xs ${categoryStyles[c].text}`}
             >
