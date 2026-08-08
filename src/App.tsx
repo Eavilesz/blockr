@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Lightbulb, Plus } from 'lucide-react'
 import { useBlockrState } from './hooks/useBlockrState'
 import { useTheme } from './hooks/useTheme'
+import { useTabTitle } from './hooks/useTabTitle'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TodaySummary } from './components/TodaySummary'
 import { Tabs } from './components/Tabs'
@@ -32,6 +33,7 @@ function App() {
     promoteBacklogItem,
   } = useBlockrState()
   const { theme, toggleTheme } = useTheme()
+  useTabTitle(state, now)
   const [tab, setTab] = useState<TabValue>('tasks')
   const [filter, setFilter] = useState<CategoryFilterValue>('all')
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
