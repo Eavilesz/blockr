@@ -6,9 +6,8 @@ export function dateStr(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-/** Sunday..Thursday date strings (YYYY-MM-DD) for the work week containing `d`, shifted
- *  by `weekOffset` whole weeks (negative = past, positive = future). Fri/Sat fall outside
- *  the work week and are attributed to the work week that starts on the Sunday after them. */
+/** Sunday..Saturday date strings (YYYY-MM-DD) for the week containing `d`, shifted by
+ *  `weekOffset` whole weeks (negative = past, positive = future). */
 export function workWeekRange(
   d: Date = new Date(),
   weekOffset = 0,
@@ -18,9 +17,9 @@ export function workWeekRange(
   const sunday = new Date(d)
   sunday.setHours(0, 0, 0, 0)
   sunday.setDate(sunday.getDate() + diffToSunday + weekOffset * 7)
-  const thursday = new Date(sunday)
-  thursday.setDate(sunday.getDate() + 4)
-  return { start: dateStr(sunday), end: dateStr(thursday) }
+  const saturday = new Date(sunday)
+  saturday.setDate(sunday.getDate() + 6)
+  return { start: dateStr(sunday), end: dateStr(saturday) }
 }
 
 export function isInWeek(date: string, week: { start: string; end: string }): boolean {
