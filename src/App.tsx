@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Lightbulb, Plus } from 'lucide-react'
 import { useBlockrState } from './hooks/useBlockrState'
 import { useTheme } from './hooks/useTheme'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -12,32 +12,66 @@ import { Modal } from './components/Modal'
 import { TaskForm } from './components/TaskForm'
 import { TaskList } from './components/TaskList'
 import { WeeklyGoals } from './components/WeeklyGoals'
-import type { Category } from './types'
+import { BacklogList } from './components/BacklogList'
+import { QuickCaptureModal } from './components/QuickCaptureModal'
+import type { BacklogItem, Category } from './types'
+
+type TaskModalState = { open: false } | { open: true; backlogId?: string; initialTitle?: string }
 
 function App() {
-  const { state, now, addTask, deleteTask, startTask, pauseRunning, setGoal } = useBlockrState()
+  const {
+    state,
+    now,
+    addTask,
+    deleteTask,
+    startTask,
+    pauseRunning,
+    setGoal,
+    addBacklogItem,
+    deleteBacklogItem,
+    promoteBacklogItem,
+  } = useBlockrState()
   const { theme, toggleTheme } = useTheme()
   const [tab, setTab] = useState<TabValue>('tasks')
   const [filter, setFilter] = useState<CategoryFilterValue>('all')
-  const [showAddTask, setShowAddTask] = useState(false)
+  const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
+  const [showQuickCapture, setShowQuickCapture] = useState(false)
 
-  function handleAdd(title: string, category: Category, tags: string[], plannedSeconds: number) {
-    addTask(title, category, tags, plannedSeconds)
-    setShowAddTask(false)
+  function handleAddTask(title: string, category: Category, tags: string[], plannedSeconds: number) {
+    if (taskModal.open && taskModal.backlogId) {
+      promoteBacklogItem(taskModal.backlogId, title, category, tags, plannedSeconds)
+    } else {
+      addTask(title, category, tags, plannedSeconds)
+    }
+    setTaskModal({ open: false })
+  }
+
+  function handlePlan(item: BacklogItem) {
+    setTaskModal({ open: true, backlogId: item.id, initialTitle: item.title })
   }
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-130 flex-col gap-5 px-4 pb-24 pt-6">
       <header className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text">blockr</h1>
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowQuickCapture(true)}
+            aria-label="Save a quick idea for later"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:text-text"
+          >
+            <Lightbulb size={16} />
+          </button>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        </div>
       </header>
 
       <TodaySummary state={state} now={now} />
 
       <Tabs value={tab} onChange={setTab} />
 
-      {tab === 'tasks' ? (
+      {tab === 'tasks' && (
         <>
           <CategoryFilter value={filter} onChange={setFilter} />
           <TaskList
@@ -50,14 +84,18 @@ function App() {
             onDelete={deleteTask}
           />
         </>
-      ) : (
-        <WeeklyGoals state={state} now={now} onSetGoal={setGoal} />
       )}
+
+      {tab === 'backlog' && (
+        <BacklogList items={state.backlog} onPlan={handlePlan} onDelete={deleteBacklogItem} />
+      )}
+
+      {tab === 'goals' && <WeeklyGoals state={state} now={now} onSetGoal={setGoal} />}
 
       {tab === 'tasks' && (
         <button
           type="button"
-          onClick={() => setShowAddTask(true)}
+          onClick={() => setTaskModal({ open: true })}
           aria-label="Add task"
           className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-text text-bg shadow-lg transition-transform hover:scale-105"
         >
@@ -65,9 +103,22 @@ function App() {
         </button>
       )}
 
-      <Modal open={showAddTask} onClose={() => setShowAddTask(false)} title="Add task">
-        <TaskForm onAdd={handleAdd} />
+      <Modal
+        open={taskModal.open}
+        onClose={() => setTaskModal({ open: false })}
+        title={taskModal.open && taskModal.backlogId ? 'Plan task' : 'Add task'}
+      >
+        <TaskForm
+          onAdd={handleAddTask}
+          initialTitle={taskModal.open ? taskModal.initialTitle : undefined}
+        />
       </Modal>
+
+      <QuickCaptureModal
+        open={showQuickCapture}
+        onClose={() => setShowQuickCapture(false)}
+        onAdd={addBacklogItem}
+      />
     </div>
   )
 }

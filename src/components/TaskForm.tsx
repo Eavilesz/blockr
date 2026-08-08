@@ -8,10 +8,12 @@ const QUICK_PICKS_MIN = [30, 60, 90]
 
 export function TaskForm({
   onAdd,
+  initialTitle = '',
 }: {
   onAdd: (title: string, category: Category, tags: string[], plannedSeconds: number) => void
+  initialTitle?: string
 }) {
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(initialTitle)
   const [category, setCategory] = useState<Category>('work')
   const [tagsInput, setTagsInput] = useState('')
   const [plannedMinutes, setPlannedMinutes] = useState<number>(30)

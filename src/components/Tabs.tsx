@@ -1,8 +1,9 @@
-export type TabValue = 'tasks' | 'goals'
+export type TabValue = 'tasks' | 'backlog' | 'goals'
 
 export function Tabs({ value, onChange }: { value: TabValue; onChange: (v: TabValue) => void }) {
   const tabs: { value: TabValue; label: string }[] = [
     { value: 'tasks', label: 'Tasks' },
+    { value: 'backlog', label: 'Backlog' },
     { value: 'goals', label: 'Weekly goals' },
   ]
 

@@ -8,6 +8,7 @@ const emptyState: BlockrState = {
   sessions: [],
   goals: [],
   running: null,
+  backlog: [],
 }
 
 export function loadState(): BlockrState {
@@ -20,6 +21,7 @@ export function loadState(): BlockrState {
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
       goals: Array.isArray(parsed.goals) ? parsed.goals : [],
       running: parsed.running ?? null,
+      backlog: Array.isArray(parsed.backlog) ? parsed.backlog : [],
     }
   } catch {
     return emptyState

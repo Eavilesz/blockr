@@ -37,6 +37,23 @@ function finalizeRunning(state: BlockrState, nowMs: number): BlockrState {
   return { ...state, tasks, sessions, running: null }
 }
 
+function buildTask(
+  title: string,
+  category: Category,
+  tags: string[],
+  plannedSeconds: number,
+): Task {
+  return {
+    id: genId(),
+    title: title.trim(),
+    category,
+    tags,
+    plannedSeconds,
+    timeSpentSeconds: 0,
+    createdAt: Date.now(),
+  }
+}
+
 export function useBlockrState() {
   const [state, setState] = useState<BlockrState>(loadState)
   const [now, setNow] = useState(() => Date.now())
@@ -69,16 +86,10 @@ export function useBlockrState() {
 
   const addTask = useCallback(
     (title: string, category: Category, tags: string[], plannedSeconds: number) => {
-      const task: Task = {
-        id: genId(),
-        title: title.trim(),
-        category,
-        tags,
-        plannedSeconds,
-        timeSpentSeconds: 0,
-        createdAt: Date.now(),
-      }
-      setState((prev) => ({ ...prev, tasks: [...prev.tasks, task] }))
+      setState((prev) => ({
+        ...prev,
+        tasks: [...prev.tasks, buildTask(title, category, tags, plannedSeconds)],
+      }))
     },
     [],
   )
@@ -117,5 +128,49 @@ export function useBlockrState() {
     })
   }, [])
 
-  return { state, now, addTask, deleteTask, startTask, pauseRunning, setGoal }
+  const addBacklogItem = useCallback((title: string) => {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    setState((prev) => ({
+      ...prev,
+      backlog: [...prev.backlog, { id: genId(), title: trimmed, createdAt: Date.now() }],
+    }))
+  }, [])
+
+  const deleteBacklogItem = useCallback((id: string) => {
+    setState((prev) => ({ ...prev, backlog: prev.backlog.filter((b) => b.id !== id) }))
+  }, [])
+
+  /** Turns a backlog idea into a real trackable task and removes it from the backlog,
+   *  in one atomic update. `title` comes from the promote form, not the stored item,
+   *  since the user may tweak it while filling in category/duration. */
+  const promoteBacklogItem = useCallback(
+    (
+      backlogId: string,
+      title: string,
+      category: Category,
+      tags: string[],
+      plannedSeconds: number,
+    ) => {
+      setState((prev) => ({
+        ...prev,
+        tasks: [...prev.tasks, buildTask(title, category, tags, plannedSeconds)],
+        backlog: prev.backlog.filter((b) => b.id !== backlogId),
+      }))
+    },
+    [],
+  )
+
+  return {
+    state,
+    now,
+    addTask,
+    deleteTask,
+    startTask,
+    pauseRunning,
+    setGoal,
+    addBacklogItem,
+    deleteBacklogItem,
+    promoteBacklogItem,
+  }
 }
