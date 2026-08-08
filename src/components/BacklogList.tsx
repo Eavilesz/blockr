@@ -1,6 +1,7 @@
 import { CalendarPlus, X } from 'lucide-react'
 import type { BacklogItem } from '../types'
-import { PRIORITIES } from '../types'
+import { CATEGORY_LABELS, PRIORITIES, PRIORITY_LABELS } from '../types'
+import { categoryStyles } from '../lib/categoryStyles'
 import { priorityStyles } from '../lib/priorityStyles'
 
 const PRIORITY_RANK = Object.fromEntries(PRIORITIES.map((p, i) => [p, i])) as Record<
@@ -33,7 +34,8 @@ export function BacklogList({
   return (
     <div className="flex flex-col gap-2">
       {sorted.map((item) => {
-        const styles = priorityStyles[item.priority]
+        const cStyles = categoryStyles[item.category]
+        const pStyles = priorityStyles[item.priority]
         return (
           <div
             key={item.id}
@@ -41,10 +43,18 @@ export function BacklogList({
           >
             <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-sm text-text">
               <span
-                aria-label={`${item.priority} priority`}
-                className={`h-2 w-2 shrink-0 rounded-full ${styles.dot}`}
+                aria-label={`${item.category} task`}
+                className={`h-2 w-2 shrink-0 rounded-full ${cStyles.dot}`}
               />
               <span className="min-w-0 truncate">{item.title}</span>
+              <span
+                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${pStyles.bgSoft} ${pStyles.text}`}
+              >
+                {PRIORITY_LABELS[item.priority]}
+              </span>
+              <span className={`shrink-0 text-xs ${cStyles.text}`}>
+                {CATEGORY_LABELS[item.category]}
+              </span>
             </span>
             <div className="flex shrink-0 items-center gap-1">
               <button

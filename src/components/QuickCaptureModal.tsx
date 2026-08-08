@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Modal } from './Modal'
-import type { Priority } from '../types'
-import { PRIORITIES, PRIORITY_LABELS } from '../types'
+import type { Category, Priority } from '../types'
+import { CATEGORIES, CATEGORY_LABELS, PRIORITIES, PRIORITY_LABELS } from '../types'
+import { categoryStyles } from '../lib/categoryStyles'
 import { priorityStyles } from '../lib/priorityStyles'
 
 export function QuickCaptureModal({
@@ -11,13 +12,15 @@ export function QuickCaptureModal({
 }: {
   open: boolean
   onClose: () => void
-  onAdd: (title: string, priority: Priority) => void
+  onAdd: (title: string, category: Category, priority: Priority) => void
 }) {
   const [title, setTitle] = useState('')
+  const [category, setCategory] = useState<Category>('work')
   const [priority, setPriority] = useState<Priority>('medium')
 
   function handleClose() {
     setTitle('')
+    setCategory('work')
     setPriority('medium')
     onClose()
   }
@@ -26,8 +29,9 @@ export function QuickCaptureModal({
     e.preventDefault()
     const trimmed = title.trim()
     if (!trimmed) return
-    onAdd(trimmed, priority)
+    onAdd(trimmed, category, priority)
     setTitle('')
+    setCategory('work')
     setPriority('medium')
     onClose()
   }
@@ -43,6 +47,27 @@ export function QuickCaptureModal({
           placeholder="What should you work on later?"
           className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-text-muted"
         />
+
+        <div className="flex gap-2">
+          {CATEGORIES.map((c) => {
+            const active = category === c
+            const styles = categoryStyles[c]
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  active
+                    ? `${styles.border} ${styles.bgSoft} ${styles.text}`
+                    : 'border-border text-text-muted hover:text-text'
+                }`}
+              >
+                {CATEGORY_LABELS[c]}
+              </button>
+            )
+          })}
+        </div>
 
         <div className="flex gap-2">
           {PRIORITIES.map((p) => {

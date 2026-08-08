@@ -19,7 +19,13 @@ import type { BacklogItem, Category, Priority } from './types'
 
 type TaskModalState =
   | { open: false }
-  | { open: true; backlogId?: string; initialTitle?: string; initialPriority?: Priority }
+  | {
+      open: true
+      backlogId?: string
+      initialTitle?: string
+      initialCategory?: Category
+      initialPriority?: Priority
+    }
 
 function App() {
   const {
@@ -62,6 +68,7 @@ function App() {
       open: true,
       backlogId: item.id,
       initialTitle: item.title,
+      initialCategory: item.category,
       initialPriority: item.priority,
     })
   }
@@ -126,6 +133,7 @@ function App() {
         <TaskForm
           onAdd={handleAddTask}
           initialTitle={taskModal.open ? taskModal.initialTitle : undefined}
+          initialCategory={taskModal.open ? taskModal.initialCategory : undefined}
           initialPriority={taskModal.open ? taskModal.initialPriority : undefined}
           availableTags={state.tags}
           onAddTagOption={addTagOption}

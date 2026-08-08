@@ -9,6 +9,14 @@ function withPriority<T extends { priority?: unknown }>(item: T): T & { priority
   return { ...item, priority }
 }
 
+/** Backlog items saved before category existed default to 'work' on load. */
+function withCategory<T extends { category?: unknown }>(item: T): T & { category: 'work' | 'study' | 'projects' } {
+  const category = item.category === 'work' || item.category === 'study' || item.category === 'projects'
+    ? item.category
+    : 'work'
+  return { ...item, category }
+}
+
 const STATE_KEY = 'blockr-state'
 const THEME_KEY = 'blockr-theme'
 
@@ -32,7 +40,7 @@ export function loadState(): BlockrState {
       goals: Array.isArray(parsed.goals) ? parsed.goals : [],
       running: parsed.running ?? null,
       backlog: Array.isArray(parsed.backlog)
-        ? (parsed.backlog as BacklogItem[]).map(withPriority)
+        ? (parsed.backlog as BacklogItem[]).map(withPriority).map(withCategory)
         : [],
       tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : DEFAULT_TAGS,
     }

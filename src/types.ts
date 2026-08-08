@@ -32,10 +32,11 @@ export interface Running {
   startedAt: number // ms epoch, from Date.now()
 }
 
-/** A quick-captured idea, not yet turned into a trackable task (no category/duration). */
+/** A quick-captured idea, not yet turned into a trackable task (no duration yet). */
 export interface BacklogItem {
   id: string
   title: string
+  category: Category
   priority: Priority
   createdAt: number
 }
@@ -56,7 +57,7 @@ export const CATEGORIES: Category[] = ['work', 'study', 'projects']
 export const CATEGORY_LABELS: Record<Category, string> = {
   work: 'Work',
   study: 'Study',
-  projects: 'Projects',
+  projects: 'Build',
 }
 
 export const DEFAULT_TAGS: string[] = ['picslctr', 'productivity', 'portfolio']

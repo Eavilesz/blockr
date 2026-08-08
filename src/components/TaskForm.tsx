@@ -10,6 +10,7 @@ const QUICK_PICKS_MIN = [30, 60, 90]
 export function TaskForm({
   onAdd,
   initialTitle = '',
+  initialCategory = 'work',
   initialPriority = 'medium',
   availableTags = DEFAULT_TAGS,
   onAddTagOption,
@@ -22,12 +23,13 @@ export function TaskForm({
     plannedSeconds: number,
   ) => void
   initialTitle?: string
+  initialCategory?: Category
   initialPriority?: Priority
   availableTags?: string[]
   onAddTagOption?: (tag: string) => void
 }) {
   const [title, setTitle] = useState(initialTitle)
-  const [category, setCategory] = useState<Category>('work')
+  const [category, setCategory] = useState<Category>(initialCategory)
   const [priority, setPriority] = useState<Priority>(initialPriority)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [plannedMinutes, setPlannedMinutes] = useState<number>(30)

@@ -144,14 +144,14 @@ export function useBlockrState() {
     )
   }, [])
 
-  const addBacklogItem = useCallback((title: string, priority: Priority) => {
+  const addBacklogItem = useCallback((title: string, category: Category, priority: Priority) => {
     const trimmed = title.trim()
     if (!trimmed) return
     setState((prev) => ({
       ...prev,
       backlog: [
         ...prev.backlog,
-        { id: genId(), title: trimmed, priority, createdAt: Date.now() },
+        { id: genId(), title: trimmed, category, priority, createdAt: Date.now() },
       ],
     }))
   }, [])
