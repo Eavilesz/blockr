@@ -1,6 +1,12 @@
 import { CalendarPlus, X } from 'lucide-react'
 import type { BacklogItem } from '../types'
+import { PRIORITIES } from '../types'
 import { priorityStyles } from '../lib/priorityStyles'
+
+const PRIORITY_RANK = Object.fromEntries(PRIORITIES.map((p, i) => [p, i])) as Record<
+  BacklogItem['priority'],
+  number
+>
 
 export function BacklogList({
   items,
@@ -19,7 +25,10 @@ export function BacklogList({
     )
   }
 
-  const sorted = [...items].sort((a, b) => b.createdAt - a.createdAt)
+  const sorted = [...items].sort((a, b) => {
+    const byPriority = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority]
+    return byPriority !== 0 ? byPriority : b.createdAt - a.createdAt
+  })
 
   return (
     <div className="flex flex-col gap-2">
