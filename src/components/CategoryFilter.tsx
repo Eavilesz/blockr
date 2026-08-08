@@ -15,6 +15,7 @@ export function CategoryFilter({
     <div className="flex gap-2 overflow-x-auto">
       <button
         type="button"
+        aria-pressed={value === 'all'}
         onClick={() => onChange('all')}
         className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors ${
           value === 'all'
@@ -31,6 +32,7 @@ export function CategoryFilter({
           <button
             key={c}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(c)}
             className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors ${
               active

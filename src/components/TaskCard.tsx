@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Pause, Play, Trash2 } from 'lucide-react'
+import { Check, Clock, Pause, Pencil, Play, Trash2 } from 'lucide-react'
 import type { Running, Task } from '../types'
 import { effectiveSpent, isCompleted } from '../lib/derive'
 import { formatStopwatch } from '../lib/time'
@@ -13,6 +13,8 @@ export function TaskCard({
   now,
   onStart,
   onPause,
+  onEdit,
+  onExtend,
   onDelete,
 }: {
   task: Task
@@ -20,6 +22,8 @@ export function TaskCard({
   now: number
   onStart: (id: string) => void
   onPause: () => void
+  onEdit: (task: Task) => void
+  onExtend: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -90,26 +94,43 @@ export function TaskCard({
         </span>
 
         <div className="flex items-center gap-2">
-          {!completed &&
-            (isRunning ? (
-              <button
-                type="button"
-                onClick={onPause}
-                className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
-              >
-                <Pause size={14} />
-                Pause
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onStart(task.id)}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bg ${styles.bg}`}
-              >
-                <Play size={14} />
-                {task.timeSpentSeconds > 0 ? 'Resume' : 'Start'}
-              </button>
-            ))}
+          {completed ? (
+            <button
+              type="button"
+              onClick={() => onExtend(task.id)}
+              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+            >
+              <Clock size={14} />
+              +15m
+            </button>
+          ) : isRunning ? (
+            <button
+              type="button"
+              onClick={onPause}
+              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+            >
+              <Pause size={14} />
+              Pause
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onStart(task.id)}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bg ${styles.bg}`}
+            >
+              <Play size={14} />
+              {task.timeSpentSeconds > 0 ? 'Resume' : 'Start'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onEdit(task)}
+            aria-label="Edit task"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted hover:text-text"
+          >
+            <Pencil size={14} />
+          </button>
 
           {confirmingDelete ? (
             <div className="flex items-center gap-1 text-xs">

@@ -1,5 +1,7 @@
 import type { Running, Task } from '../types'
+import { PRIORITY_RANK } from '../types'
 import type { CategoryFilterValue } from './CategoryFilter'
+import { isCompleted } from '../lib/derive'
 import { TaskCard } from './TaskCard'
 
 export function TaskList({
@@ -9,6 +11,8 @@ export function TaskList({
   now,
   onStart,
   onPause,
+  onEdit,
+  onExtend,
   onDelete,
 }: {
   tasks: Task[]
@@ -17,13 +21,25 @@ export function TaskList({
   now: number
   onStart: (id: string) => void
   onPause: () => void
+  onEdit: (task: Task) => void
+  onExtend: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const filtered = tasks.filter((t) => filter === 'all' || t.category === filter)
+  // Running task always first, then open tasks by priority (high first) then newest,
+  // with completed tasks pushed to the bottom so the active work stays in view.
   const sorted = [...filtered].sort((a, b) => {
     const aRunning = running?.taskId === a.id ? 1 : 0
     const bRunning = running?.taskId === b.id ? 1 : 0
     if (aRunning !== bRunning) return bRunning - aRunning
+
+    const aDone = isCompleted(a) ? 1 : 0
+    const bDone = isCompleted(b) ? 1 : 0
+    if (aDone !== bDone) return aDone - bDone
+
+    const byPriority = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority]
+    if (byPriority !== 0) return byPriority
+
     return b.createdAt - a.createdAt
   })
 
@@ -45,6 +61,8 @@ export function TaskList({
           now={now}
           onStart={onStart}
           onPause={onPause}
+          onEdit={onEdit}
+          onExtend={onExtend}
           onDelete={onDelete}
         />
       ))}

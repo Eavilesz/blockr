@@ -12,8 +12,11 @@ export function TaskForm({
   initialTitle = '',
   initialCategory = 'work',
   initialPriority = 'medium',
+  initialTags = [],
+  initialPlannedMinutes = 30,
   availableTags = DEFAULT_TAGS,
   onAddTagOption,
+  submitLabel = 'Add task',
 }: {
   onAdd: (
     title: string,
@@ -25,14 +28,17 @@ export function TaskForm({
   initialTitle?: string
   initialCategory?: Category
   initialPriority?: Priority
+  initialTags?: string[]
+  initialPlannedMinutes?: number
   availableTags?: string[]
   onAddTagOption?: (tag: string) => void
+  submitLabel?: string
 }) {
   const [title, setTitle] = useState(initialTitle)
   const [category, setCategory] = useState<Category>(initialCategory)
   const [priority, setPriority] = useState<Priority>(initialPriority)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [plannedMinutes, setPlannedMinutes] = useState<number>(30)
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialTags)
+  const [plannedMinutes, setPlannedMinutes] = useState<number>(initialPlannedMinutes)
   const [addingTag, setAddingTag] = useState(false)
   const [newTag, setNewTag] = useState('')
 
@@ -65,13 +71,14 @@ export function TaskForm({
     setTitle('')
     setPriority('medium')
     setSelectedTags([])
-    setPlannedMinutes(30)
+    setPlannedMinutes(initialPlannedMinutes)
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <input
         type="text"
+        autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="What are you working on?"
@@ -86,6 +93,7 @@ export function TaskForm({
             <button
               key={c}
               type="button"
+              aria-pressed={active}
               onClick={() => setCategory(c)}
               className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                 active
@@ -107,6 +115,7 @@ export function TaskForm({
             <button
               key={p}
               type="button"
+              aria-pressed={active}
               onClick={() => setPriority(p)}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                 active
@@ -129,6 +138,7 @@ export function TaskForm({
               <button
                 key={tag}
                 type="button"
+                aria-pressed={active}
                 onClick={() => toggleTag(tag)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   active
@@ -210,7 +220,7 @@ export function TaskForm({
         className="flex items-center justify-center gap-1.5 rounded-lg bg-text px-3 py-2 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
       >
         <Plus size={16} />
-        Add task
+        {submitLabel}
       </button>
     </form>
   )

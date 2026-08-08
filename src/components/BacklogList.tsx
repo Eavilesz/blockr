@@ -1,13 +1,8 @@
 import { CalendarPlus, X } from 'lucide-react'
 import type { BacklogItem } from '../types'
-import { CATEGORY_LABELS, PRIORITIES, PRIORITY_LABELS } from '../types'
+import { CATEGORY_LABELS, PRIORITY_LABELS, PRIORITY_RANK } from '../types'
 import { categoryStyles } from '../lib/categoryStyles'
 import { priorityStyles } from '../lib/priorityStyles'
-
-const PRIORITY_RANK = Object.fromEntries(PRIORITIES.map((p, i) => [p, i])) as Record<
-  BacklogItem['priority'],
-  number
->
 
 export function BacklogList({
   items,

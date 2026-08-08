@@ -102,6 +102,41 @@ export function useBlockrState() {
     [],
   )
 
+  /** Edits an existing task's fields in place. `timeSpentSeconds` is left untouched so
+   *  progress already logged survives the edit; if the new plannedSeconds is now below
+   *  what's already spent, the task simply reads as completed. */
+  const updateTask = useCallback(
+    (
+      taskId: string,
+      title: string,
+      category: Category,
+      tags: string[],
+      priority: Priority,
+      plannedSeconds: number,
+    ) => {
+      setState((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t) =>
+          t.id === taskId
+            ? { ...t, title: title.trim(), category, tags, priority, plannedSeconds }
+            : t,
+        ),
+      }))
+    },
+    [],
+  )
+
+  /** Adds extra planned time to a task — the way to keep working past a completed plan
+   *  without opening the edit form. */
+  const extendTask = useCallback((taskId: string, extraSeconds: number) => {
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) =>
+        t.id === taskId ? { ...t, plannedSeconds: t.plannedSeconds + extraSeconds } : t,
+      ),
+    }))
+  }, [])
+
   const deleteTask = useCallback((taskId: string) => {
     setState((prev) => ({
       ...prev,
@@ -185,6 +220,8 @@ export function useBlockrState() {
     state,
     now,
     addTask,
+    updateTask,
+    extendTask,
     deleteTask,
     startTask,
     pauseRunning,

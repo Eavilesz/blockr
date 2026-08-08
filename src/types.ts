@@ -69,3 +69,10 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   medium: 'Medium',
   high: 'High',
 }
+
+/** Higher number = higher priority. Use to sort priority-first, e.g. `b - a`. */
+export const PRIORITY_RANK: Record<Priority, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+}

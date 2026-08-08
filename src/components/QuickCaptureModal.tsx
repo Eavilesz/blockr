@@ -56,6 +56,7 @@ export function QuickCaptureModal({
               <button
                 key={c}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setCategory(c)}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   active
@@ -77,6 +78,7 @@ export function QuickCaptureModal({
               <button
                 key={p}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setPriority(p)}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   active

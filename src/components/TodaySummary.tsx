@@ -12,6 +12,7 @@ export function TodaySummary({
   now: number;
 }) {
   const totals = todayTotals(state, now);
+  const totalSeconds = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
@@ -31,6 +32,10 @@ export function TodaySummary({
             </span>
           </div>
         ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-text-muted">
+        <span>Today total</span>
+        <span className="font-mono text-text">{formatStopwatch(totalSeconds)}</span>
       </div>
     </div>
   );

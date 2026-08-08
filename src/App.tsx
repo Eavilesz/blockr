@@ -15,16 +15,28 @@ import { TaskList } from './components/TaskList'
 import { WeeklyGoals } from './components/WeeklyGoals'
 import { BacklogList } from './components/BacklogList'
 import { QuickCaptureModal } from './components/QuickCaptureModal'
-import type { BacklogItem, Category, Priority } from './types'
+import type { BacklogItem, Category, Priority, Task } from './types'
 
 type TaskModalState =
   | { open: false }
+  | { open: true; mode: 'create' }
   | {
       open: true
-      backlogId?: string
-      initialTitle?: string
-      initialCategory?: Category
-      initialPriority?: Priority
+      mode: 'plan'
+      backlogId: string
+      initialTitle: string
+      initialCategory: Category
+      initialPriority: Priority
+    }
+  | {
+      open: true
+      mode: 'edit'
+      taskId: string
+      initialTitle: string
+      initialCategory: Category
+      initialPriority: Priority
+      initialTags: string[]
+      initialPlannedMinutes: number
     }
 
 function App() {
@@ -32,6 +44,8 @@ function App() {
     state,
     now,
     addTask,
+    updateTask,
+    extendTask,
     deleteTask,
     startTask,
     pauseRunning,
@@ -48,14 +62,16 @@ function App() {
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
   const [showQuickCapture, setShowQuickCapture] = useState(false)
 
-  function handleAddTask(
+  function handleSubmitTask(
     title: string,
     category: Category,
     tags: string[],
     priority: Priority,
     plannedSeconds: number,
   ) {
-    if (taskModal.open && taskModal.backlogId) {
+    if (taskModal.open && taskModal.mode === 'edit') {
+      updateTask(taskModal.taskId, title, category, tags, priority, plannedSeconds)
+    } else if (taskModal.open && taskModal.mode === 'plan') {
       promoteBacklogItem(taskModal.backlogId, title, category, tags, priority, plannedSeconds)
     } else {
       addTask(title, category, tags, priority, plannedSeconds)
@@ -66,11 +82,29 @@ function App() {
   function handlePlan(item: BacklogItem) {
     setTaskModal({
       open: true,
+      mode: 'plan',
       backlogId: item.id,
       initialTitle: item.title,
       initialCategory: item.category,
       initialPriority: item.priority,
     })
+  }
+
+  function handleEdit(task: Task) {
+    setTaskModal({
+      open: true,
+      mode: 'edit',
+      taskId: task.id,
+      initialTitle: task.title,
+      initialCategory: task.category,
+      initialPriority: task.priority,
+      initialTags: task.tags,
+      initialPlannedMinutes: Math.round(task.plannedSeconds / 60),
+    })
+  }
+
+  function handleExtend(taskId: string) {
+    extendTask(taskId, 15 * 60)
   }
 
   return (
@@ -103,6 +137,8 @@ function App() {
             now={now}
             onStart={startTask}
             onPause={pauseRunning}
+            onEdit={handleEdit}
+            onExtend={handleExtend}
             onDelete={deleteTask}
           />
         </>
@@ -117,7 +153,7 @@ function App() {
       {tab === 'tasks' && (
         <button
           type="button"
-          onClick={() => setTaskModal({ open: true })}
+          onClick={() => setTaskModal({ open: true, mode: 'create' })}
           aria-label="Add task"
           className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-text text-bg shadow-lg transition-transform hover:scale-105"
         >
@@ -128,13 +164,30 @@ function App() {
       <Modal
         open={taskModal.open}
         onClose={() => setTaskModal({ open: false })}
-        title={taskModal.open && taskModal.backlogId ? 'Plan task' : 'Add task'}
+        title={
+          taskModal.open && taskModal.mode === 'edit'
+            ? 'Edit task'
+            : taskModal.open && taskModal.mode === 'plan'
+              ? 'Plan task'
+              : 'Add task'
+        }
       >
         <TaskForm
-          onAdd={handleAddTask}
-          initialTitle={taskModal.open ? taskModal.initialTitle : undefined}
-          initialCategory={taskModal.open ? taskModal.initialCategory : undefined}
-          initialPriority={taskModal.open ? taskModal.initialPriority : undefined}
+          onAdd={handleSubmitTask}
+          initialTitle={
+            taskModal.open && taskModal.mode !== 'create' ? taskModal.initialTitle : undefined
+          }
+          initialCategory={
+            taskModal.open && taskModal.mode !== 'create' ? taskModal.initialCategory : undefined
+          }
+          initialPriority={
+            taskModal.open && taskModal.mode !== 'create' ? taskModal.initialPriority : undefined
+          }
+          initialTags={taskModal.open && taskModal.mode === 'edit' ? taskModal.initialTags : undefined}
+          initialPlannedMinutes={
+            taskModal.open && taskModal.mode === 'edit' ? taskModal.initialPlannedMinutes : undefined
+          }
+          submitLabel={taskModal.open && taskModal.mode === 'edit' ? 'Save changes' : 'Add task'}
           availableTags={state.tags}
           onAddTagOption={addTagOption}
         />
