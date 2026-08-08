@@ -15,9 +15,11 @@ import { TaskList } from './components/TaskList'
 import { WeeklyGoals } from './components/WeeklyGoals'
 import { BacklogList } from './components/BacklogList'
 import { QuickCaptureModal } from './components/QuickCaptureModal'
-import type { BacklogItem, Category } from './types'
+import type { BacklogItem, Category, Priority } from './types'
 
-type TaskModalState = { open: false } | { open: true; backlogId?: string; initialTitle?: string }
+type TaskModalState =
+  | { open: false }
+  | { open: true; backlogId?: string; initialTitle?: string; initialPriority?: Priority }
 
 function App() {
   const {
@@ -40,17 +42,28 @@ function App() {
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
   const [showQuickCapture, setShowQuickCapture] = useState(false)
 
-  function handleAddTask(title: string, category: Category, tags: string[], plannedSeconds: number) {
+  function handleAddTask(
+    title: string,
+    category: Category,
+    tags: string[],
+    priority: Priority,
+    plannedSeconds: number,
+  ) {
     if (taskModal.open && taskModal.backlogId) {
-      promoteBacklogItem(taskModal.backlogId, title, category, tags, plannedSeconds)
+      promoteBacklogItem(taskModal.backlogId, title, category, tags, priority, plannedSeconds)
     } else {
-      addTask(title, category, tags, plannedSeconds)
+      addTask(title, category, tags, priority, plannedSeconds)
     }
     setTaskModal({ open: false })
   }
 
   function handlePlan(item: BacklogItem) {
-    setTaskModal({ open: true, backlogId: item.id, initialTitle: item.title })
+    setTaskModal({
+      open: true,
+      backlogId: item.id,
+      initialTitle: item.title,
+      initialPriority: item.priority,
+    })
   }
 
   return (
@@ -114,6 +127,7 @@ function App() {
         <TaskForm
           onAdd={handleAddTask}
           initialTitle={taskModal.open ? taskModal.initialTitle : undefined}
+          initialPriority={taskModal.open ? taskModal.initialPriority : undefined}
           availableTags={state.tags}
           onAddTagOption={addTagOption}
         />

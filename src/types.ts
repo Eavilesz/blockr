@@ -1,10 +1,13 @@
 export type Category = 'work' | 'study' | 'projects'
 
+export type Priority = 'low' | 'medium' | 'high'
+
 export interface Task {
   id: string
   title: string
   category: Category
   tags: string[]
+  priority: Priority
   plannedSeconds: number
   timeSpentSeconds: number
   createdAt: number
@@ -33,6 +36,7 @@ export interface Running {
 export interface BacklogItem {
   id: string
   title: string
+  priority: Priority
   createdAt: number
 }
 
@@ -56,3 +60,11 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 }
 
 export const DEFAULT_TAGS: string[] = ['picslctr', 'productivity', 'portfolio']
+
+export const PRIORITIES: Priority[] = ['low', 'medium', 'high']
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+}

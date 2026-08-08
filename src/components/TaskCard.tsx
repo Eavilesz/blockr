@@ -4,6 +4,8 @@ import type { Running, Task } from '../types'
 import { effectiveSpent, isCompleted } from '../lib/derive'
 import { formatStopwatch } from '../lib/time'
 import { categoryStyles } from '../lib/categoryStyles'
+import { priorityStyles } from '../lib/priorityStyles'
+import { PRIORITY_LABELS } from '../types'
 
 export function TaskCard({
   task,
@@ -27,6 +29,7 @@ export function TaskCard({
   const spent = effectiveSpent(task, running, now)
   const pct = task.plannedSeconds > 0 ? Math.min(100, (spent / task.plannedSeconds) * 100) : 0
   const styles = categoryStyles[task.category]
+  const pStyles = priorityStyles[task.priority]
 
   return (
     <div
@@ -38,13 +41,20 @@ export function TaskCard({
         <div className="flex min-w-0 items-start gap-2">
           <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${styles.dot}`} />
           <div className="min-w-0">
-            <p
-              className={`truncate text-sm font-medium text-text ${
-                completed ? 'line-through' : ''
-              }`}
-            >
-              {task.title}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p
+                className={`truncate text-sm font-medium text-text ${
+                  completed ? 'line-through' : ''
+                }`}
+              >
+                {task.title}
+              </p>
+              <span
+                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${pStyles.bgSoft} ${pStyles.text}`}
+              >
+                {PRIORITY_LABELS[task.priority]}
+              </span>
+            </div>
             {task.tags.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {task.tags.map((tag) => (

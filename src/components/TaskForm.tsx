@@ -1,25 +1,35 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import type { Category } from '../types'
-import { CATEGORIES, CATEGORY_LABELS, DEFAULT_TAGS } from '../types'
+import type { Category, Priority } from '../types'
+import { CATEGORIES, CATEGORY_LABELS, DEFAULT_TAGS, PRIORITIES, PRIORITY_LABELS } from '../types'
 import { categoryStyles } from '../lib/categoryStyles'
+import { priorityStyles } from '../lib/priorityStyles'
 
 const QUICK_PICKS_MIN = [30, 60, 90]
 
 export function TaskForm({
   onAdd,
   initialTitle = '',
+  initialPriority = 'medium',
   availableTags = DEFAULT_TAGS,
   onAddTagOption,
 }: {
-  onAdd: (title: string, category: Category, tags: string[], plannedSeconds: number) => void
+  onAdd: (
+    title: string,
+    category: Category,
+    tags: string[],
+    priority: Priority,
+    plannedSeconds: number,
+  ) => void
   initialTitle?: string
+  initialPriority?: Priority
   availableTags?: string[]
   onAddTagOption?: (tag: string) => void
 }) {
   const [title, setTitle] = useState(initialTitle)
   const [category, setCategory] = useState<Category>('work')
-  const [selectedTags, setSelectedTags] = useState<string[]>(DEFAULT_TAGS)
+  const [priority, setPriority] = useState<Priority>(initialPriority)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [plannedMinutes, setPlannedMinutes] = useState<number>(30)
   const [addingTag, setAddingTag] = useState(false)
   const [newTag, setNewTag] = useState('')
@@ -49,9 +59,10 @@ export function TaskForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canSubmit) return
-    onAdd(title, category, selectedTags, Math.round(plannedMinutes * 60))
+    onAdd(title, category, selectedTags, priority, Math.round(plannedMinutes * 60))
     setTitle('')
-    setSelectedTags(DEFAULT_TAGS)
+    setPriority('medium')
+    setSelectedTags([])
     setPlannedMinutes(30)
   }
 
@@ -81,6 +92,28 @@ export function TaskForm({
               }`}
             >
               {CATEGORY_LABELS[c]}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex gap-2">
+        {PRIORITIES.map((p) => {
+          const active = priority === p
+          const styles = priorityStyles[p]
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPriority(p)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                active
+                  ? `${styles.border} ${styles.bgSoft} ${styles.text}`
+                  : 'border-border text-text-muted hover:text-text'
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${styles.dot}`} />
+              {PRIORITY_LABELS[p]}
             </button>
           )
         })}

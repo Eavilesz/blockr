@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { BlockrState, Category, Task } from '../types'
+import type { BlockrState, Category, Priority, Task } from '../types'
 import { loadState, saveState } from '../lib/storage'
 import { genId } from '../lib/id'
 import { dateStr } from '../lib/time'
@@ -41,6 +41,7 @@ function buildTask(
   title: string,
   category: Category,
   tags: string[],
+  priority: Priority,
   plannedSeconds: number,
 ): Task {
   return {
@@ -48,6 +49,7 @@ function buildTask(
     title: title.trim(),
     category,
     tags,
+    priority,
     plannedSeconds,
     timeSpentSeconds: 0,
     createdAt: Date.now(),
@@ -85,10 +87,16 @@ export function useBlockrState() {
   }, [runningTaskId, runningStartedAt])
 
   const addTask = useCallback(
-    (title: string, category: Category, tags: string[], plannedSeconds: number) => {
+    (
+      title: string,
+      category: Category,
+      tags: string[],
+      priority: Priority,
+      plannedSeconds: number,
+    ) => {
       setState((prev) => ({
         ...prev,
-        tasks: [...prev.tasks, buildTask(title, category, tags, plannedSeconds)],
+        tasks: [...prev.tasks, buildTask(title, category, tags, priority, plannedSeconds)],
       }))
     },
     [],
@@ -136,12 +144,15 @@ export function useBlockrState() {
     )
   }, [])
 
-  const addBacklogItem = useCallback((title: string) => {
+  const addBacklogItem = useCallback((title: string, priority: Priority) => {
     const trimmed = title.trim()
     if (!trimmed) return
     setState((prev) => ({
       ...prev,
-      backlog: [...prev.backlog, { id: genId(), title: trimmed, createdAt: Date.now() }],
+      backlog: [
+        ...prev.backlog,
+        { id: genId(), title: trimmed, priority, createdAt: Date.now() },
+      ],
     }))
   }, [])
 
@@ -158,11 +169,12 @@ export function useBlockrState() {
       title: string,
       category: Category,
       tags: string[],
+      priority: Priority,
       plannedSeconds: number,
     ) => {
       setState((prev) => ({
         ...prev,
-        tasks: [...prev.tasks, buildTask(title, category, tags, plannedSeconds)],
+        tasks: [...prev.tasks, buildTask(title, category, tags, priority, plannedSeconds)],
         backlog: prev.backlog.filter((b) => b.id !== backlogId),
       }))
     },

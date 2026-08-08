@@ -11,6 +11,10 @@
   --color-study: #9333ea;
   --color-projects: #0ea5a0;
 
+  --color-priority-low: #4b9d5f;
+  --color-priority-medium: #d18b1f;
+  --color-priority-high: #dc3545;
+
   color-scheme: light;
 }
 
@@ -24,6 +28,10 @@
   --color-work: #7c9cf0;
   --color-study: #c39cf5;
   --color-projects: #3fe0d0;
+
+  --color-priority-low: #6fc281;
+  --color-priority-medium: #f0ac4c;
+  --color-priority-high: #f0616f;
 
   color-scheme: dark;
 }
@@ -40,6 +48,9 @@
   --color-work: var(--color-work);
   --color-study: var(--color-study);
   --color-projects: var(--color-projects);
+  --color-priority-low: var(--color-priority-low);
+  --color-priority-medium: var(--color-priority-medium);
+  --color-priority-high: var(--color-priority-high);
 }
 
 * {
