@@ -83,12 +83,11 @@ function App() {
         </div>
       </header>
 
-      <TodaySummary state={state} now={now} />
-
       <Tabs value={tab} onChange={setTab} />
 
       {tab === 'tasks' && (
         <>
+          <TodaySummary state={state} now={now} />
           <CategoryFilter value={filter} onChange={setFilter} />
           <TaskList
             tasks={state.tasks}
