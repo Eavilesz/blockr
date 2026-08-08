@@ -35,7 +35,7 @@ export function todayTotals(state: BlockrState, now: number): Record<Category, n
   return totals
 }
 
-/** Seconds tracked per category in the work week (Sun-Thu) containing `now`, shifted by
+/** Seconds tracked per category in the week (Sun-Sat) containing `now`, shifted by
  *  `weekOffset` whole weeks. Includes the live running session only when that session's
  *  day falls inside the queried week. */
 export function weekTotals(
