@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { Category } from '../types'
-import { CATEGORIES, CATEGORY_LABELS } from '../types'
+import { CATEGORIES, CATEGORY_LABELS, DEFAULT_TAGS } from '../types'
 import { categoryStyles } from '../lib/categoryStyles'
 
 const QUICK_PICKS_MIN = [30, 60, 90]
@@ -9,27 +9,49 @@ const QUICK_PICKS_MIN = [30, 60, 90]
 export function TaskForm({
   onAdd,
   initialTitle = '',
+  availableTags = DEFAULT_TAGS,
+  onAddTagOption,
 }: {
   onAdd: (title: string, category: Category, tags: string[], plannedSeconds: number) => void
   initialTitle?: string
+  availableTags?: string[]
+  onAddTagOption?: (tag: string) => void
 }) {
   const [title, setTitle] = useState(initialTitle)
   const [category, setCategory] = useState<Category>('work')
-  const [tagsInput, setTagsInput] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>(DEFAULT_TAGS)
   const [plannedMinutes, setPlannedMinutes] = useState<number>(30)
+  const [addingTag, setAddingTag] = useState(false)
+  const [newTag, setNewTag] = useState('')
 
   const canSubmit = title.trim().length > 0 && plannedMinutes > 0
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+  }
+
+  function handleCreateTag() {
+    const trimmed = newTag.trim()
+    if (!trimmed) {
+      setAddingTag(false)
+      return
+    }
+    if (!availableTags.includes(trimmed)) {
+      onAddTagOption?.(trimmed)
+    }
+    setSelectedTags((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
+    setNewTag('')
+    setAddingTag(false)
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canSubmit) return
-    const tags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
-    onAdd(title, category, tags, Math.round(plannedMinutes * 60))
+    onAdd(title, category, selectedTags, Math.round(plannedMinutes * 60))
     setTitle('')
-    setTagsInput('')
+    setSelectedTags(DEFAULT_TAGS)
     setPlannedMinutes(30)
   }
 
@@ -64,13 +86,60 @@ export function TaskForm({
         })}
       </div>
 
-      <input
-        type="text"
-        value={tagsInput}
-        onChange={(e) => setTagsInput(e.target.value)}
-        placeholder="Tags (comma-separated, e.g. picslctr, portfolio)"
-        className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-text-muted"
-      />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
+          {availableTags.map((tag) => {
+            const active = selectedTags.includes(tag)
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => toggleTag(tag)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  active
+                    ? 'border-text text-text'
+                    : 'border-border text-text-muted hover:text-text'
+                }`}
+              >
+                {tag}
+              </button>
+            )
+          })}
+
+          {addingTag ? (
+            <span className="flex items-center gap-1">
+              <input
+                type="text"
+                autoFocus
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleCreateTag()
+                  } else if (e.key === 'Escape') {
+                    setAddingTag(false)
+                    setNewTag('')
+                  }
+                }}
+                onBlur={handleCreateTag}
+                placeholder="New tag"
+                className="w-24 rounded-full border border-border bg-bg px-3 py-1 text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-text-muted"
+              />
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingTag(true)}
+              aria-label="Add new tag"
+              className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs text-text-muted transition-colors hover:text-text"
+            >
+              <Plus size={12} />
+              New tag
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">

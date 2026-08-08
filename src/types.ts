@@ -42,6 +42,7 @@ export interface BlockrState {
   goals: Goal[]
   running: Running | null
   backlog: BacklogItem[]
+  tags: string[]
 }
 
 export type Theme = 'dark' | 'light'
@@ -53,3 +54,5 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   study: 'Study',
   projects: 'Projects',
 }
+
+export const DEFAULT_TAGS: string[] = ['picslctr', 'productivity', 'portfolio']

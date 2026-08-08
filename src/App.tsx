@@ -28,6 +28,7 @@ function App() {
     startTask,
     pauseRunning,
     setGoal,
+    addTagOption,
     addBacklogItem,
     deleteBacklogItem,
     promoteBacklogItem,
@@ -113,6 +114,8 @@ function App() {
         <TaskForm
           onAdd={handleAddTask}
           initialTitle={taskModal.open ? taskModal.initialTitle : undefined}
+          availableTags={state.tags}
+          onAddTagOption={addTagOption}
         />
       </Modal>
 

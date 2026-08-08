@@ -128,6 +128,14 @@ export function useBlockrState() {
     })
   }, [])
 
+  const addTagOption = useCallback((tag: string) => {
+    const trimmed = tag.trim()
+    if (!trimmed) return
+    setState((prev) =>
+      prev.tags.includes(trimmed) ? prev : { ...prev, tags: [...prev.tags, trimmed] },
+    )
+  }, [])
+
   const addBacklogItem = useCallback((title: string) => {
     const trimmed = title.trim()
     if (!trimmed) return
@@ -169,6 +177,7 @@ export function useBlockrState() {
     startTask,
     pauseRunning,
     setGoal,
+    addTagOption,
     addBacklogItem,
     deleteBacklogItem,
     promoteBacklogItem,

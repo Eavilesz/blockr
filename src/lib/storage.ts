@@ -1,4 +1,5 @@
 import type { BlockrState, Theme } from '../types'
+import { DEFAULT_TAGS } from '../types'
 
 const STATE_KEY = 'blockr-state'
 const THEME_KEY = 'blockr-theme'
@@ -9,6 +10,7 @@ const emptyState: BlockrState = {
   goals: [],
   running: null,
   backlog: [],
+  tags: DEFAULT_TAGS,
 }
 
 export function loadState(): BlockrState {
@@ -22,6 +24,7 @@ export function loadState(): BlockrState {
       goals: Array.isArray(parsed.goals) ? parsed.goals : [],
       running: parsed.running ?? null,
       backlog: Array.isArray(parsed.backlog) ? parsed.backlog : [],
+      tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : DEFAULT_TAGS,
     }
   } catch {
     return emptyState
