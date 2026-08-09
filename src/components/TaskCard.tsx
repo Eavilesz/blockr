@@ -43,13 +43,19 @@ export function TaskCard({
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 transition-opacity ${
-        completed ? 'opacity-60' : ''
-      }`}
+      className={`flex flex-col gap-3 rounded-xl border p-4 transition-all ${
+        isRunning
+          ? `${styles.border} ${styles.bgSoft} shadow-sm`
+          : 'border-border bg-surface'
+      } ${completed ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
-          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${styles.dot}`} />
+          <span
+            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${styles.dot} ${
+              isRunning ? 'animate-pulse' : ''
+            }`}
+          />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <p
@@ -79,11 +85,20 @@ export function TaskCard({
             )}
           </div>
         </div>
-        {completed && (
+        {completed ? (
           <span className={`flex shrink-0 items-center gap-1 text-xs ${styles.text}`}>
             <Check size={14} />
             Completed
           </span>
+        ) : (
+          isRunning && (
+            <span
+              className={`flex shrink-0 items-center gap-1 text-xs font-medium ${styles.text}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${styles.dot} animate-pulse`} />
+              Running
+            </span>
+          )
         )}
       </div>
 
@@ -120,7 +135,7 @@ export function TaskCard({
               <button
                 type="button"
                 onClick={onPause}
-                className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bg ${styles.bg}`}
               >
                 <Pause size={14} />
                 Pause
