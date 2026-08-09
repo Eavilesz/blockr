@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Lightbulb, Plus } from 'lucide-react'
+import { LogOut, Lightbulb, Plus } from 'lucide-react'
+import { useAuth } from './hooks/useAuth'
 import { useBlockrState } from './hooks/useBlockrState'
 import { useTheme } from './hooks/useTheme'
 import { useTabTitle } from './hooks/useTabTitle'
+import { isSupabaseConfigured } from './lib/supabaseClient'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TodaySummary } from './components/TodaySummary'
 import { Tabs } from './components/Tabs'
@@ -15,7 +17,17 @@ import { TaskList } from './components/TaskList'
 import { WeeklyGoals } from './components/WeeklyGoals'
 import { BacklogList } from './components/BacklogList'
 import { QuickCaptureModal } from './components/QuickCaptureModal'
+import { SupabaseSetupNotice } from './components/SupabaseSetupNotice'
+import { LoginScreen } from './components/LoginScreen'
 import type { BacklogItem, Category, Priority, Task } from './types'
+
+function FullScreenMessage({ text }: { text: string }) {
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center px-4">
+      <p className="text-sm text-text-muted">{text}</p>
+    </div>
+  )
+}
 
 type TaskModalState =
   | { open: false }
@@ -39,10 +51,11 @@ type TaskModalState =
       initialPlannedMinutes: number
     }
 
-function App() {
+function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
   const {
     state,
     now,
+    loading,
     addTask,
     updateTask,
     extendTask,
@@ -54,13 +67,17 @@ function App() {
     addBacklogItem,
     deleteBacklogItem,
     promoteBacklogItem,
-  } = useBlockrState()
+  } = useBlockrState(userId)
   const { theme, toggleTheme } = useTheme()
   useTabTitle(state, now)
   const [tab, setTab] = useState<TabValue>('tasks')
   const [filter, setFilter] = useState<CategoryFilterValue>('all')
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
   const [showQuickCapture, setShowQuickCapture] = useState(false)
+
+  if (loading) {
+    return <FullScreenMessage text="Loading your tasks…" />
+  }
 
   function handleSubmitTask(
     title: string,
@@ -121,6 +138,14 @@ function App() {
             <Lightbulb size={16} />
           </button>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <button
+            type="button"
+            onClick={onSignOut}
+            aria-label="Sign out"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:text-text"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </header>
 
@@ -200,6 +225,24 @@ function App() {
       />
     </div>
   )
+}
+
+function App() {
+  const { user, loading, signInWithEmail, signOut } = useAuth()
+
+  if (!isSupabaseConfigured) {
+    return <SupabaseSetupNotice />
+  }
+
+  if (loading) {
+    return <FullScreenMessage text="Checking your session…" />
+  }
+
+  if (!user) {
+    return <LoginScreen onSubmit={signInWithEmail} />
+  }
+
+  return <TaskTracker userId={user.id} onSignOut={signOut} />
 }
 
 export default App

@@ -1,3 +1,30 @@
+# blockr
+
+A personal time-blocking task tracker. Tasks/backlog/goals sync via Supabase, so your data
+follows you across devices once signed in.
+
+## Setup
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Open the SQL editor and run [`supabase/schema.sql`](supabase/schema.sql) — creates the
+   `blockr_state` table (one JSON row per user) with row-level security so users can only
+   read/write their own row.
+3. In the Supabase dashboard, under **Authentication > URL Configuration**, add your dev URL
+   (e.g. `http://localhost:5173`) as a redirect URL — required for the magic-link sign-in
+   email to work.
+4. Copy `.env.example` to `.env` and fill in your project's URL and anon key (**Settings >
+   API** in the dashboard):
+   ```
+   VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-public-key
+   ```
+5. `npm install && npm run dev`.
+
+Sign-in is passwordless: enter your email, and a magic link arrives to log you in. Until
+`.env` is filled in, the app shows setup instructions instead of crashing.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

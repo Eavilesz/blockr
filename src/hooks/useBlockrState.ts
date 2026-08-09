@@ -1,8 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BlockrState, Category, Priority, Task } from '../types'
-import { loadState, saveState } from '../lib/storage'
+import { DEFAULT_TAGS } from '../types'
 import { genId } from '../lib/id'
 import { dateStr } from '../lib/time'
+import { supabase } from '../lib/supabaseClient'
+
+const SAVE_DEBOUNCE_MS = 800
+
+function defaultState(): BlockrState {
+  return {
+    tasks: [],
+    sessions: [],
+    goals: [],
+    running: null,
+    backlog: [],
+    tags: DEFAULT_TAGS,
+  }
+}
 
 /** Closes out the currently running timer: caps progress at plannedSeconds, records a
  *  session for the elapsed chunk, and clears `running`. Shared by manual pause and
@@ -56,14 +70,77 @@ function buildTask(
   }
 }
 
-export function useBlockrState() {
-  const [state, setState] = useState<BlockrState>(loadState)
+/** `userId` is null while signed out. State lives in Supabase (table `blockr_state`,
+ *  one JSON row per user) — this hook fetches it on sign-in and debounce-saves every
+ *  change back, so multiple devices stay in sync a beat after each edit. */
+export function useBlockrState(userId: string | null) {
+  const [state, setState] = useState<BlockrState>(defaultState)
   const [now, setNow] = useState(() => Date.now())
+  const [loading, setLoading] = useState(() => Boolean(userId && supabase))
+  const skipNextSave = useRef(false)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Persist on every change.
+  // Reset local state synchronously during render when the signed-in user changes
+  // (sign in/out) — adjusting state from a prop change belongs in render, not an effect.
+  const [prevUserId, setPrevUserId] = useState(userId)
+  if (prevUserId !== userId) {
+    setPrevUserId(userId)
+    setState(defaultState())
+    setLoading(Boolean(userId && supabase))
+  }
+
+  // Fetch this user's state once signed in.
   useEffect(() => {
-    saveState(state)
-  }, [state])
+    if (!userId || !supabase) return
+    let cancelled = false
+    supabase
+      .from('blockr_state')
+      .select('state')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(async ({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Failed to load blockr state:', error.message)
+
+        skipNextSave.current = true
+        if (data?.state) {
+          setState(data.state as BlockrState)
+        } else {
+          const fresh = defaultState()
+          setState(fresh)
+          const { error: insertError } = await supabase!
+            .from('blockr_state')
+            .insert({ user_id: userId, state: fresh })
+          if (insertError) console.error('Failed to seed blockr state:', insertError.message)
+        }
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  // Debounce-persist every change back to Supabase, skipping the write that would
+  // otherwise immediately echo back the state we just loaded.
+  useEffect(() => {
+    if (!userId || !supabase) return
+    if (skipNextSave.current) {
+      skipNextSave.current = false
+      return
+    }
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      supabase!
+        .from('blockr_state')
+        .upsert({ user_id: userId, state })
+        .then(({ error }) => {
+          if (error) console.error('Failed to save blockr state:', error.message)
+        })
+    }, SAVE_DEBOUNCE_MS)
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+    }
+  }, [state, userId])
 
   // While a timer runs, tick every second: refresh `now` for live displays, and
   // auto-complete the task the instant it reaches its planned duration.
@@ -219,6 +296,7 @@ export function useBlockrState() {
   return {
     state,
     now,
+    loading,
     addTask,
     updateTask,
     extendTask,
