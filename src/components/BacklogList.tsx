@@ -27,31 +27,36 @@ export function BacklogList({
   })
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {sorted.map((item) => {
         const cStyles = categoryStyles[item.category]
         const pStyles = priorityStyles[item.priority]
         return (
           <div
             key={item.id}
-            className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface p-3"
+            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
           >
-            <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-sm text-text">
+            <div className="flex items-start gap-2">
               <span
                 aria-label={`${item.category} task`}
-                className={`h-2 w-2 shrink-0 rounded-full ${cStyles.dot}`}
+                className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${cStyles.dot}`}
               />
-              <span className="min-w-0 truncate">{item.title}</span>
-              <span
-                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${pStyles.bgSoft} ${pStyles.text}`}
-              >
-                {PRIORITY_LABELS[item.priority]}
-              </span>
-              <span className={`shrink-0 text-xs ${cStyles.text}`}>
-                {CATEGORY_LABELS[item.category]}
-              </span>
-            </span>
-            <div className="flex shrink-0 items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="min-w-0 flex-1 wrap-break-word text-sm font-medium text-text">
+                    {item.title}
+                  </p>
+                  <span
+                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${pStyles.bgSoft} ${pStyles.text}`}
+                  >
+                    {PRIORITY_LABELS[item.priority]}
+                  </span>
+                </div>
+                <span className={`text-xs ${cStyles.text}`}>{CATEGORY_LABELS[item.category]}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => onMoveToToday(item)}
