@@ -15,12 +15,6 @@ type PequenaStatus = {
   time_spent_seconds: number | null;
 };
 
-const CATEGORY_LABEL_ES: Record<Category, string> = {
-  work: "trabajo",
-  study: "estudio",
-  projects: "un proyecto",
-};
-
 const POLL_MS = 8000;
 
 /** Public, no-login page at /pequena — lets my girlfriend check whether I'm currently
