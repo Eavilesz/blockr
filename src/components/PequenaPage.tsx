@@ -100,8 +100,15 @@ export function PequenaPage() {
         <p className="text-sm text-text-muted">Cargando…</p>
       ) : isRunning ? (
         <div className="flex w-full flex-col gap-4">
+          <img
+            src="/working_cat.webp"
+            alt="Gato trabajando"
+            className="mx-auto w-full max-w-60 rounded-xl border border-border"
+          />
+
           <p className="text-sm text-text">
-            Mi amor, ahora mismo estoy concentrado en el trabajo, pero te tengo
+            Mi amor, ahora mismo estoy concentrado
+            {status?.category ? ` en ${CATEGORY_LABEL_ES[status.category]}` : ''}, pero te tengo
             presente. Ya casi termino 🤎
           </p>
 
