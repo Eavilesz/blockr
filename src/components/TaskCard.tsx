@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Clock, Pause, Pencil, Play, Trash2 } from 'lucide-react'
+import { Check, Clock, Flag, Pause, Pencil, Play, Trash2 } from 'lucide-react'
 import type { Running, Task } from '../types'
 import { effectiveSpent, isCompleted } from '../lib/derive'
 import { formatStopwatch } from '../lib/time'
@@ -15,6 +15,7 @@ export function TaskCard({
   onPause,
   onEdit,
   onExtend,
+  onFinish,
   onDelete,
 }: {
   task: Task
@@ -24,14 +25,19 @@ export function TaskCard({
   onPause: () => void
   onEdit: (task: Task) => void
   onExtend: (id: string) => void
+  onFinish: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const isRunning = running?.taskId === task.id
   const completed = isCompleted(task)
+  const untimed = task.plannedSeconds === null
   const spent = effectiveSpent(task, running, now)
-  const pct = task.plannedSeconds > 0 ? Math.min(100, (spent / task.plannedSeconds) * 100) : 0
+  const pct =
+    task.plannedSeconds !== null && task.plannedSeconds > 0
+      ? Math.min(100, (spent / task.plannedSeconds) * 100)
+      : 0
   const styles = categoryStyles[task.category]
   const pStyles = priorityStyles[task.priority]
 
@@ -81,46 +87,76 @@ export function TaskCard({
         )}
       </div>
 
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">
-        <div
-          className={`h-full rounded-full ${styles.bg} transition-[width]`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      {!untimed && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">
+          <div
+            className={`h-full rounded-full ${styles.bg} transition-[width]`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-sm text-text-muted">
-          {formatStopwatch(spent)} / {formatStopwatch(task.plannedSeconds)}
+          {untimed
+            ? formatStopwatch(spent)
+            : `${formatStopwatch(spent)} / ${formatStopwatch(task.plannedSeconds!)}`}
         </span>
 
         <div className="flex items-center gap-2">
           {completed ? (
-            <button
-              type="button"
-              onClick={() => onExtend(task.id)}
-              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
-            >
-              <Clock size={14} />
-              +15m
-            </button>
+            !untimed && (
+              <button
+                type="button"
+                onClick={() => onExtend(task.id)}
+                className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+              >
+                <Clock size={14} />
+                +15m
+              </button>
+            )
           ) : isRunning ? (
-            <button
-              type="button"
-              onClick={onPause}
-              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
-            >
-              <Pause size={14} />
-              Pause
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={onPause}
+                className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+              >
+                <Pause size={14} />
+                Pause
+              </button>
+              {untimed && (
+                <button
+                  type="button"
+                  onClick={() => onFinish(task.id)}
+                  className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+                >
+                  <Flag size={14} />
+                  Finish
+                </button>
+              )}
+            </>
           ) : (
-            <button
-              type="button"
-              onClick={() => onStart(task.id)}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bg ${styles.bg}`}
-            >
-              <Play size={14} />
-              {task.timeSpentSeconds > 0 ? 'Resume' : 'Start'}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onStart(task.id)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bg ${styles.bg}`}
+              >
+                <Play size={14} />
+                {task.timeSpentSeconds > 0 ? 'Resume' : 'Start'}
+              </button>
+              {untimed && (
+                <button
+                  type="button"
+                  onClick={() => onFinish(task.id)}
+                  className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
+                >
+                  <Flag size={14} />
+                  Finish
+                </button>
+              )}
+            </>
           )}
 
           <button

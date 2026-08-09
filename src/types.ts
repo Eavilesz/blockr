@@ -8,8 +8,13 @@ export interface Task {
   category: Category
   tags: string[]
   priority: Priority
-  plannedSeconds: number
+  /** null means no timer was set — the task tracks elapsed time with no target and
+   *  must be finished manually via `completed` instead of auto-completing. */
+  plannedSeconds: number | null
   timeSpentSeconds: number
+  /** Manually marked done. Always how untimed tasks finish; timed tasks are also
+   *  considered complete once timeSpentSeconds reaches plannedSeconds (see isCompleted). */
+  completed: boolean
   createdAt: number
 }
 

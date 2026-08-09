@@ -13,6 +13,7 @@ export function TaskList({
   onPause,
   onEdit,
   onExtend,
+  onFinish,
   onDelete,
 }: {
   tasks: Task[]
@@ -23,6 +24,7 @@ export function TaskList({
   onPause: () => void
   onEdit: (task: Task) => void
   onExtend: (id: string) => void
+  onFinish: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const filtered = tasks.filter((t) => filter === 'all' || t.category === filter)
@@ -63,6 +65,7 @@ export function TaskList({
           onPause={onPause}
           onEdit={onEdit}
           onExtend={onExtend}
+          onFinish={onFinish}
           onDelete={onDelete}
         />
       ))}

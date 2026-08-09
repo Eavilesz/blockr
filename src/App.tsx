@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LogOut, Lightbulb, Plus } from 'lucide-react'
+import { LogOut, Plus } from 'lucide-react'
 import { useAuth } from './hooks/useAuth'
 import { useBlockrState } from './hooks/useBlockrState'
 import { useTheme } from './hooks/useTheme'
@@ -16,7 +16,6 @@ import { TaskForm } from './components/TaskForm'
 import { TaskList } from './components/TaskList'
 import { WeeklyGoals } from './components/WeeklyGoals'
 import { BacklogList } from './components/BacklogList'
-import { QuickCaptureModal } from './components/QuickCaptureModal'
 import { SupabaseSetupNotice } from './components/SupabaseSetupNotice'
 import { LoginScreen } from './components/LoginScreen'
 import type { BacklogItem, Category, Priority, Task } from './types'
@@ -34,21 +33,13 @@ type TaskModalState =
   | { open: true; mode: 'create' }
   | {
       open: true
-      mode: 'plan'
-      backlogId: string
-      initialTitle: string
-      initialCategory: Category
-      initialPriority: Priority
-    }
-  | {
-      open: true
       mode: 'edit'
       taskId: string
       initialTitle: string
       initialCategory: Category
       initialPriority: Priority
       initialTags: string[]
-      initialPlannedMinutes: number
+      initialPlannedMinutes: number | null
     }
 
 function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
@@ -59,6 +50,7 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     addTask,
     updateTask,
     extendTask,
+    finishTask,
     deleteTask,
     startTask,
     pauseRunning,
@@ -66,14 +58,13 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     addTagOption,
     addBacklogItem,
     deleteBacklogItem,
-    promoteBacklogItem,
+    moveBacklogItemToToday,
   } = useBlockrState(userId)
   const { theme, toggleTheme } = useTheme()
   useTabTitle(state, now)
   const [tab, setTab] = useState<TabValue>('tasks')
   const [filter, setFilter] = useState<CategoryFilterValue>('all')
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
-  const [showQuickCapture, setShowQuickCapture] = useState(false)
 
   if (loading) {
     return <FullScreenMessage text="Loading your tasks…" />
@@ -84,27 +75,32 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     category: Category,
     tags: string[],
     priority: Priority,
-    plannedSeconds: number,
+    plannedSeconds: number | null,
   ) {
     if (taskModal.open && taskModal.mode === 'edit') {
       updateTask(taskModal.taskId, title, category, tags, priority, plannedSeconds)
-    } else if (taskModal.open && taskModal.mode === 'plan') {
-      promoteBacklogItem(taskModal.backlogId, title, category, tags, priority, plannedSeconds)
-    } else {
-      addTask(title, category, tags, priority, plannedSeconds)
     }
     setTaskModal({ open: false })
   }
 
-  function handlePlan(item: BacklogItem) {
-    setTaskModal({
-      open: true,
-      mode: 'plan',
-      backlogId: item.id,
-      initialTitle: item.title,
-      initialCategory: item.category,
-      initialPriority: item.priority,
-    })
+  function handleAddToday(
+    title: string,
+    category: Category,
+    tags: string[],
+    priority: Priority,
+    plannedSeconds: number | null,
+  ) {
+    addTask(title, category, tags, priority, plannedSeconds)
+    setTaskModal({ open: false })
+  }
+
+  function handleAddToBacklog(title: string, category: Category, priority: Priority) {
+    addBacklogItem(title, category, priority)
+    setTaskModal({ open: false })
+  }
+
+  function handleMoveToToday(item: BacklogItem) {
+    moveBacklogItemToToday(item.id)
   }
 
   function handleEdit(task: Task) {
@@ -116,7 +112,8 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
       initialCategory: task.category,
       initialPriority: task.priority,
       initialTags: task.tags,
-      initialPlannedMinutes: Math.round(task.plannedSeconds / 60),
+      initialPlannedMinutes:
+        task.plannedSeconds === null ? null : Math.round(task.plannedSeconds / 60),
     })
   }
 
@@ -131,11 +128,11 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setShowQuickCapture(true)}
-            aria-label="Save a quick idea for later"
+            onClick={() => setTaskModal({ open: true, mode: 'create' })}
+            aria-label="Add task"
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:text-text"
           >
-            <Lightbulb size={16} />
+            <Plus size={16} />
           </button>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button
@@ -164,41 +161,32 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
             onPause={pauseRunning}
             onEdit={handleEdit}
             onExtend={handleExtend}
+            onFinish={finishTask}
             onDelete={deleteTask}
           />
         </>
       )}
 
       {tab === 'backlog' && (
-        <BacklogList items={state.backlog} onPlan={handlePlan} onDelete={deleteBacklogItem} />
+        <BacklogList
+          items={state.backlog}
+          onMoveToToday={handleMoveToToday}
+          onDelete={deleteBacklogItem}
+        />
       )}
 
       {tab === 'goals' && <WeeklyGoals state={state} now={now} onSetGoal={setGoal} />}
 
-      {tab === 'tasks' && (
-        <button
-          type="button"
-          onClick={() => setTaskModal({ open: true, mode: 'create' })}
-          aria-label="Add task"
-          className="fixed bottom-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-text text-bg shadow-lg transition-transform hover:scale-105"
-        >
-          <Plus size={22} />
-        </button>
-      )}
-
       <Modal
         open={taskModal.open}
         onClose={() => setTaskModal({ open: false })}
-        title={
-          taskModal.open && taskModal.mode === 'edit'
-            ? 'Edit task'
-            : taskModal.open && taskModal.mode === 'plan'
-              ? 'Plan task'
-              : 'Add task'
-        }
+        title={taskModal.open && taskModal.mode === 'edit' ? 'Edit task' : 'Add task'}
       >
         <TaskForm
-          onAdd={handleSubmitTask}
+          mode={taskModal.open ? taskModal.mode : 'create'}
+          onAddToday={handleAddToday}
+          onAddBacklog={handleAddToBacklog}
+          onSubmit={handleSubmitTask}
           initialTitle={
             taskModal.open && taskModal.mode !== 'create' ? taskModal.initialTitle : undefined
           }
@@ -212,17 +200,13 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
           initialPlannedMinutes={
             taskModal.open && taskModal.mode === 'edit' ? taskModal.initialPlannedMinutes : undefined
           }
-          submitLabel={taskModal.open && taskModal.mode === 'edit' ? 'Save changes' : 'Add task'}
+          submitLabel={
+            taskModal.open && taskModal.mode === 'edit' ? 'Save changes' : 'Add to today'
+          }
           availableTags={state.tags}
           onAddTagOption={addTagOption}
         />
       </Modal>
-
-      <QuickCaptureModal
-        open={showQuickCapture}
-        onClose={() => setShowQuickCapture(false)}
-        onAdd={addBacklogItem}
-      />
     </div>
   )
 }

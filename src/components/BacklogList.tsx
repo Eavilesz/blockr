@@ -6,11 +6,11 @@ import { priorityStyles } from '../lib/priorityStyles'
 
 export function BacklogList({
   items,
-  onPlan,
+  onMoveToToday,
   onDelete,
 }: {
   items: BacklogItem[]
-  onPlan: (item: BacklogItem) => void
+  onMoveToToday: (item: BacklogItem) => void
   onDelete: (id: string) => void
 }) {
   if (items.length === 0) {
@@ -54,11 +54,11 @@ export function BacklogList({
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
-                onClick={() => onPlan(item)}
+                onClick={() => onMoveToToday(item)}
                 className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text hover:bg-bg"
               >
                 <CalendarPlus size={14} />
-                Plan
+                Today
               </button>
               <button
                 type="button"

@@ -18,9 +18,10 @@ function defaultState(): BlockrState {
   }
 }
 
-/** Closes out the currently running timer: caps progress at plannedSeconds, records a
- *  session for the elapsed chunk, and clears `running`. Shared by manual pause and
- *  tick-driven auto-complete so both paths behave identically. */
+/** Closes out the currently running timer: caps progress at plannedSeconds (timed tasks)
+ *  or just lets it accumulate (untimed tasks), records a session for the elapsed chunk,
+ *  and clears `running`. Shared by manual pause and tick-driven auto-complete so both
+ *  paths behave identically. */
 function finalizeRunning(state: BlockrState, nowMs: number): BlockrState {
   const running = state.running
   if (!running) return state
@@ -28,7 +29,10 @@ function finalizeRunning(state: BlockrState, nowMs: number): BlockrState {
   if (!task) return { ...state, running: null }
 
   const elapsed = Math.max(0, Math.floor((nowMs - running.startedAt) / 1000))
-  const cappedSpent = Math.min(task.timeSpentSeconds + elapsed, task.plannedSeconds)
+  const cappedSpent =
+    task.plannedSeconds === null
+      ? task.timeSpentSeconds + elapsed
+      : Math.min(task.timeSpentSeconds + elapsed, task.plannedSeconds)
   const sessionDuration = cappedSpent - task.timeSpentSeconds
 
   const tasks = state.tasks.map((t) =>
@@ -56,7 +60,7 @@ function buildTask(
   category: Category,
   tags: string[],
   priority: Priority,
-  plannedSeconds: number,
+  plannedSeconds: number | null,
 ): Task {
   return {
     id: genId(),
@@ -66,6 +70,7 @@ function buildTask(
     priority,
     plannedSeconds,
     timeSpentSeconds: 0,
+    completed: false,
     createdAt: Date.now(),
   }
 }
@@ -156,7 +161,8 @@ export function useBlockrState(userId: string | null) {
         const task = prev.tasks.find((tk) => tk.id === prev.running!.taskId)
         if (!task) return { ...prev, running: null }
         const elapsed = Math.floor((t - prev.running.startedAt) / 1000)
-        const reachedPlan = task.timeSpentSeconds + elapsed >= task.plannedSeconds
+        const reachedPlan =
+          task.plannedSeconds !== null && task.timeSpentSeconds + elapsed >= task.plannedSeconds
         return reachedPlan ? finalizeRunning(prev, t) : prev
       })
     }, 1000)
@@ -169,7 +175,7 @@ export function useBlockrState(userId: string | null) {
       category: Category,
       tags: string[],
       priority: Priority,
-      plannedSeconds: number,
+      plannedSeconds: number | null,
     ) => {
       setState((prev) => ({
         ...prev,
@@ -189,7 +195,7 @@ export function useBlockrState(userId: string | null) {
       category: Category,
       tags: string[],
       priority: Priority,
-      plannedSeconds: number,
+      plannedSeconds: number | null,
     ) => {
       setState((prev) => ({
         ...prev,
@@ -204,14 +210,28 @@ export function useBlockrState(userId: string | null) {
   )
 
   /** Adds extra planned time to a task — the way to keep working past a completed plan
-   *  without opening the edit form. */
+   *  without opening the edit form. Only meaningful for timed tasks. */
   const extendTask = useCallback((taskId: string, extraSeconds: number) => {
     setState((prev) => ({
       ...prev,
       tasks: prev.tasks.map((t) =>
-        t.id === taskId ? { ...t, plannedSeconds: t.plannedSeconds + extraSeconds } : t,
+        t.id === taskId && t.plannedSeconds !== null
+          ? { ...t, plannedSeconds: t.plannedSeconds + extraSeconds }
+          : t,
       ),
     }))
+  }, [])
+
+  /** Manually marks a task done — the only way untimed tasks (no plannedSeconds) finish.
+   *  Finalizes any live run first so the last stretch of elapsed time is saved as a session. */
+  const finishTask = useCallback((taskId: string) => {
+    setState((prev) => {
+      const base = prev.running?.taskId === taskId ? finalizeRunning(prev, Date.now()) : prev
+      return {
+        ...base,
+        tasks: base.tasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t)),
+      }
+    })
   }, [])
 
   const deleteTask = useCallback((taskId: string) => {
@@ -226,7 +246,11 @@ export function useBlockrState(userId: string | null) {
   const startTask = useCallback((taskId: string) => {
     setState((prev) => {
       const task = prev.tasks.find((t) => t.id === taskId)
-      if (!task || task.timeSpentSeconds >= task.plannedSeconds) return prev
+      const alreadyDone =
+        !task ||
+        task.completed ||
+        (task.plannedSeconds !== null && task.timeSpentSeconds >= task.plannedSeconds)
+      if (!task || alreadyDone) return prev
       if (prev.running?.taskId === taskId) return prev
 
       const base = prev.running ? finalizeRunning(prev, Date.now()) : prev
@@ -272,26 +296,19 @@ export function useBlockrState(userId: string | null) {
     setState((prev) => ({ ...prev, backlog: prev.backlog.filter((b) => b.id !== id) }))
   }, [])
 
-  /** Turns a backlog idea into a real trackable task and removes it from the backlog,
-   *  in one atomic update. `title` comes from the promote form, not the stored item,
-   *  since the user may tweak it while filling in category/duration. */
-  const promoteBacklogItem = useCallback(
-    (
-      backlogId: string,
-      title: string,
-      category: Category,
-      tags: string[],
-      priority: Priority,
-      plannedSeconds: number,
-    ) => {
-      setState((prev) => ({
+  /** Turns a backlog idea into a real trackable task in today's view and removes it from
+   *  the backlog, in one atomic update — no timer is set, so the task starts untimed. */
+  const moveBacklogItemToToday = useCallback((backlogId: string) => {
+    setState((prev) => {
+      const item = prev.backlog.find((b) => b.id === backlogId)
+      if (!item) return prev
+      return {
         ...prev,
-        tasks: [...prev.tasks, buildTask(title, category, tags, priority, plannedSeconds)],
+        tasks: [...prev.tasks, buildTask(item.title, item.category, [], item.priority, null)],
         backlog: prev.backlog.filter((b) => b.id !== backlogId),
-      }))
-    },
-    [],
-  )
+      }
+    })
+  }, [])
 
   return {
     state,
@@ -300,6 +317,7 @@ export function useBlockrState(userId: string | null) {
     addTask,
     updateTask,
     extendTask,
+    finishTask,
     deleteTask,
     startTask,
     pauseRunning,
@@ -307,6 +325,6 @@ export function useBlockrState(userId: string | null) {
     addTagOption,
     addBacklogItem,
     deleteBacklogItem,
-    promoteBacklogItem,
+    moveBacklogItemToToday,
   }
 }

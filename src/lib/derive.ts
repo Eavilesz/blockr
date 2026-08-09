@@ -1,14 +1,18 @@
 import type { BlockrState, Category, Running, Task } from '../types'
 import { dateStr, isInWeek, workWeekRange } from './time'
 
-/** Time spent on a task right now, including any live in-progress run, capped at plannedSeconds. */
+/** Time spent on a task right now, including any live in-progress run. Capped at
+ *  plannedSeconds for timed tasks; uncapped (counts up freely) for untimed ones. */
 export function effectiveSpent(task: Task, running: Running | null, now: number): number {
   if (!running || running.taskId !== task.id) return task.timeSpentSeconds
-  const elapsed = Math.floor((now - running.startedAt) / 1000)
-  return Math.min(task.timeSpentSeconds + Math.max(elapsed, 0), task.plannedSeconds)
+  const elapsed = Math.max(0, Math.floor((now - running.startedAt) / 1000))
+  if (task.plannedSeconds === null) return task.timeSpentSeconds + elapsed
+  return Math.min(task.timeSpentSeconds + elapsed, task.plannedSeconds)
 }
 
 export function isCompleted(task: Task): boolean {
+  if (task.completed) return true
+  if (task.plannedSeconds === null) return false
   return task.timeSpentSeconds >= task.plannedSeconds
 }
 

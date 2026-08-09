@@ -8,7 +8,10 @@ import { priorityStyles } from '../lib/priorityStyles'
 const QUICK_PICKS_MIN = [30, 60, 90]
 
 export function TaskForm({
-  onAdd,
+  mode = 'create',
+  onAddToday,
+  onAddBacklog,
+  onSubmit,
   initialTitle = '',
   initialCategory = 'work',
   initialPriority = 'medium',
@@ -16,20 +19,32 @@ export function TaskForm({
   initialPlannedMinutes = 30,
   availableTags = DEFAULT_TAGS,
   onAddTagOption,
-  submitLabel = 'Add task',
+  submitLabel = 'Save changes',
 }: {
-  onAdd: (
+  /** 'create' shows the two-way "today / backlog" choice; 'edit' shows a single submit
+   *  button driven by `onSubmit` and `submitLabel`. */
+  mode?: 'create' | 'edit'
+  onAddToday?: (
     title: string,
     category: Category,
     tags: string[],
     priority: Priority,
-    plannedSeconds: number,
+    plannedSeconds: number | null,
+  ) => void
+  onAddBacklog?: (title: string, category: Category, priority: Priority) => void
+  onSubmit?: (
+    title: string,
+    category: Category,
+    tags: string[],
+    priority: Priority,
+    plannedSeconds: number | null,
   ) => void
   initialTitle?: string
   initialCategory?: Category
   initialPriority?: Priority
   initialTags?: string[]
-  initialPlannedMinutes?: number
+  /** null means "no timer" — the duration section starts on the "No timer" option. */
+  initialPlannedMinutes?: number | null
   availableTags?: string[]
   onAddTagOption?: (tag: string) => void
   submitLabel?: string
@@ -38,11 +53,11 @@ export function TaskForm({
   const [category, setCategory] = useState<Category>(initialCategory)
   const [priority, setPriority] = useState<Priority>(initialPriority)
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags)
-  const [plannedMinutes, setPlannedMinutes] = useState<number>(initialPlannedMinutes)
+  const [plannedMinutes, setPlannedMinutes] = useState<number | null>(initialPlannedMinutes)
   const [addingTag, setAddingTag] = useState(false)
   const [newTag, setNewTag] = useState('')
 
-  const canSubmit = title.trim().length > 0 && plannedMinutes > 0
+  const canSubmit = title.trim().length > 0 && (plannedMinutes === null || plannedMinutes > 0)
 
   function toggleTag(tag: string) {
     setSelectedTags((prev) =>
@@ -64,14 +79,29 @@ export function TaskForm({
     setAddingTag(false)
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!canSubmit) return
-    onAdd(title, category, selectedTags, priority, Math.round(plannedMinutes * 60))
+  function resetForm() {
     setTitle('')
     setPriority('medium')
     setSelectedTags([])
     setPlannedMinutes(initialPlannedMinutes)
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!canSubmit) return
+    const plannedSeconds = plannedMinutes === null ? null : Math.round(plannedMinutes * 60)
+    if (mode === 'create') {
+      onAddToday?.(title, category, selectedTags, priority, plannedSeconds)
+    } else {
+      onSubmit?.(title, category, selectedTags, priority, plannedSeconds)
+    }
+    resetForm()
+  }
+
+  function handleAddBacklog() {
+    if (!title.trim()) return
+    onAddBacklog?.(title, category, priority)
+    resetForm()
   }
 
   return (
@@ -202,26 +232,62 @@ export function TaskForm({
               {min < 60 ? `${min}m` : min === 60 ? '1h' : '1h 30'}
             </button>
           ))}
-          <input
-            type="number"
-            min={1}
-            value={plannedMinutes}
-            onChange={(e) => setPlannedMinutes(Number(e.target.value))}
-            placeholder="Custom"
-            className="w-20 rounded-lg border border-border bg-bg px-2 py-2 text-center text-sm font-mono text-text focus:outline-none focus:ring-1 focus:ring-text-muted"
-          />
+          <button
+            type="button"
+            onClick={() => setPlannedMinutes(null)}
+            className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              plannedMinutes === null
+                ? 'border-text text-text'
+                : 'border-border text-text-muted hover:text-text'
+            }`}
+          >
+            No timer
+          </button>
         </div>
-        <span className="text-xs text-text-muted">minutes</span>
+        {plannedMinutes !== null && (
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={plannedMinutes}
+              onChange={(e) => setPlannedMinutes(Number(e.target.value))}
+              placeholder="Custom"
+              className="w-20 rounded-lg border border-border bg-bg px-2 py-2 text-center text-sm font-mono text-text focus:outline-none focus:ring-1 focus:ring-text-muted"
+            />
+            <span className="text-xs text-text-muted">minutes</span>
+          </div>
+        )}
       </div>
 
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="flex items-center justify-center gap-1.5 rounded-lg bg-text px-3 py-2 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
-      >
-        <Plus size={16} />
-        {submitLabel}
-      </button>
+      {mode === 'create' ? (
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-text px-3 py-2 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
+          >
+            <Plus size={16} />
+            Do today
+          </button>
+          <button
+            type="button"
+            onClick={handleAddBacklog}
+            disabled={!title.trim()}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text transition-opacity hover:text-text disabled:opacity-40"
+          >
+            Backlog
+          </button>
+        </div>
+      ) : (
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-text px-3 py-2 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
+        >
+          <Plus size={16} />
+          {submitLabel}
+        </button>
+      )}
     </form>
   )
 }
