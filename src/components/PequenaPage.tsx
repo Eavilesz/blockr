@@ -21,12 +21,6 @@ const CATEGORY_LABEL_ES: Record<Category, string> = {
   projects: "un proyecto",
 };
 
-const PRIORITY_LABEL_ES: Record<"low" | "medium" | "high", string> = {
-  low: "baja",
-  medium: "media",
-  high: "alta",
-};
-
 const POLL_MS = 8000;
 
 /** Public, no-login page at /pequena — lets my girlfriend check whether I'm currently
@@ -107,29 +101,11 @@ export function PequenaPage() {
           />
 
           <p className="text-sm text-text">
-            Mi amor, ahora mismo estoy concentrado
-            {status?.category ? ` en ${CATEGORY_LABEL_ES[status.category]}` : ''}, pero te tengo
+            Mi amor, ahora mismo estoy concentrado en el trabajo, pero te tengo
             presente. Ya casi termino 🤎
           </p>
 
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-            {status?.task_title && (
-              <div className="flex items-center justify-center gap-1.5 text-sm text-text">
-                {styles && (
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full ${styles.dot}`}
-                  />
-                )}
-                <span className="font-medium">{status.task_title}</span>
-              </div>
-            )}
-
-            {status?.priority && (
-              <p className="text-xs text-text-muted">
-                Prioridad: {PRIORITY_LABEL_ES[status.priority]}
-              </p>
-            )}
-
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">
               <div
                 className={`h-full rounded-full transition-[width] ${styles?.bg ?? "bg-text"}`}
@@ -154,10 +130,15 @@ export function PequenaPage() {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-text">
-          Mi amor, en este momento no estoy trabajando en nada — ¡así que ya
-          casi puedo estar contigo! Vuelve a revisar en un rato 🤎
-        </p>
+        <div className="flex w-full flex-col gap-4">
+          <img
+            src="/chill-cat.png"
+            alt="Gato relajado"
+            className="mx-auto w-full max-w-60 rounded-xl border border-border"
+          />
+
+          <p className="text-sm text-text">Novio Libre 😎</p>
+        </div>
       )}
     </div>
   );
