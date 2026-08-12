@@ -2,6 +2,12 @@ export type Category = 'work' | 'study' | 'projects'
 
 export type Priority = 'low' | 'medium' | 'high'
 
+export interface ChecklistItem {
+  id: string
+  text: string
+  done: boolean
+}
+
 export interface Task {
   id: string
   title: string
@@ -16,6 +22,7 @@ export interface Task {
    *  considered complete once timeSpentSeconds reaches plannedSeconds (see isCompleted). */
   completed: boolean
   createdAt: number
+  checklist: ChecklistItem[]
 }
 
 export interface Session {

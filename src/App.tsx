@@ -18,7 +18,7 @@ import { WeeklyGoals } from './components/WeeklyGoals'
 import { BacklogList } from './components/BacklogList'
 import { SupabaseSetupNotice } from './components/SupabaseSetupNotice'
 import { LoginScreen } from './components/LoginScreen'
-import type { BacklogItem, Category, Priority, Task } from './types'
+import type { BacklogItem, Category, ChecklistItem, Priority, Task } from './types'
 
 function FullScreenMessage({ text }: { text: string }) {
   return (
@@ -40,6 +40,7 @@ type TaskModalState =
       initialPriority: Priority
       initialTags: string[]
       initialPlannedMinutes: number | null
+      initialChecklist: ChecklistItem[]
     }
 
 function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
@@ -49,6 +50,7 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     loading,
     addTask,
     updateTask,
+    toggleChecklistItem,
     extendTask,
     finishTask,
     deleteTask,
@@ -76,9 +78,10 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     tags: string[],
     priority: Priority,
     plannedSeconds: number | null,
+    checklist: ChecklistItem[],
   ) {
     if (taskModal.open && taskModal.mode === 'edit') {
-      updateTask(taskModal.taskId, title, category, tags, priority, plannedSeconds)
+      updateTask(taskModal.taskId, title, category, tags, priority, plannedSeconds, checklist)
     }
     setTaskModal({ open: false })
   }
@@ -89,8 +92,9 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     tags: string[],
     priority: Priority,
     plannedSeconds: number | null,
+    checklist: ChecklistItem[],
   ) {
-    addTask(title, category, tags, priority, plannedSeconds)
+    addTask(title, category, tags, priority, plannedSeconds, checklist)
     setTaskModal({ open: false })
   }
 
@@ -114,6 +118,7 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
       initialTags: task.tags,
       initialPlannedMinutes:
         task.plannedSeconds === null ? null : Math.round(task.plannedSeconds / 60),
+      initialChecklist: task.checklist,
     })
   }
 
@@ -163,6 +168,7 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
             onExtend={handleExtend}
             onFinish={finishTask}
             onDelete={deleteTask}
+            onToggleChecklistItem={toggleChecklistItem}
           />
         </>
       )}
@@ -199,6 +205,9 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
           initialTags={taskModal.open && taskModal.mode === 'edit' ? taskModal.initialTags : undefined}
           initialPlannedMinutes={
             taskModal.open && taskModal.mode === 'edit' ? taskModal.initialPlannedMinutes : undefined
+          }
+          initialChecklist={
+            taskModal.open && taskModal.mode === 'edit' ? taskModal.initialChecklist : undefined
           }
           submitLabel={
             taskModal.open && taskModal.mode === 'edit' ? 'Save changes' : 'Add to today'

@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
-import type { Category, Priority } from '../types'
+import { Plus, X } from 'lucide-react'
+import type { Category, ChecklistItem, Priority } from '../types'
 import { CATEGORIES, CATEGORY_LABELS, DEFAULT_TAGS, PRIORITIES, PRIORITY_LABELS } from '../types'
 import { categoryStyles } from '../lib/categoryStyles'
 import { priorityStyles } from '../lib/priorityStyles'
+import { genId } from '../lib/id'
 
 const QUICK_PICKS_MIN = [30, 60, 90]
 
@@ -17,6 +18,7 @@ export function TaskForm({
   initialPriority = 'medium',
   initialTags = [],
   initialPlannedMinutes = 30,
+  initialChecklist = [],
   availableTags = DEFAULT_TAGS,
   onAddTagOption,
   submitLabel = 'Save changes',
@@ -30,6 +32,7 @@ export function TaskForm({
     tags: string[],
     priority: Priority,
     plannedSeconds: number | null,
+    checklist: ChecklistItem[],
   ) => void
   onAddBacklog?: (title: string, category: Category, priority: Priority) => void
   onSubmit?: (
@@ -38,6 +41,7 @@ export function TaskForm({
     tags: string[],
     priority: Priority,
     plannedSeconds: number | null,
+    checklist: ChecklistItem[],
   ) => void
   initialTitle?: string
   initialCategory?: Category
@@ -45,6 +49,7 @@ export function TaskForm({
   initialTags?: string[]
   /** null means "no timer" — the duration section starts on the "No timer" option. */
   initialPlannedMinutes?: number | null
+  initialChecklist?: ChecklistItem[]
   availableTags?: string[]
   onAddTagOption?: (tag: string) => void
   submitLabel?: string
@@ -54,6 +59,8 @@ export function TaskForm({
   const [priority, setPriority] = useState<Priority>(initialPriority)
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags)
   const [plannedMinutes, setPlannedMinutes] = useState<number | null>(initialPlannedMinutes)
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(initialChecklist)
+  const [newChecklistItem, setNewChecklistItem] = useState('')
   const [addingTag, setAddingTag] = useState(false)
   const [newTag, setNewTag] = useState('')
 
@@ -84,6 +91,18 @@ export function TaskForm({
     setPriority('medium')
     setSelectedTags([])
     setPlannedMinutes(initialPlannedMinutes)
+    setChecklist([])
+  }
+
+  function addChecklistItem() {
+    const trimmed = newChecklistItem.trim()
+    if (!trimmed) return
+    setChecklist((prev) => [...prev, { id: genId(), text: trimmed, done: false }])
+    setNewChecklistItem('')
+  }
+
+  function removeChecklistItem(id: string) {
+    setChecklist((prev) => prev.filter((item) => item.id !== id))
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -91,9 +110,9 @@ export function TaskForm({
     if (!canSubmit) return
     const plannedSeconds = plannedMinutes === null ? null : Math.round(plannedMinutes * 60)
     if (mode === 'create') {
-      onAddToday?.(title, category, selectedTags, priority, plannedSeconds)
+      onAddToday?.(title, category, selectedTags, priority, plannedSeconds, checklist)
     } else {
-      onSubmit?.(title, category, selectedTags, priority, plannedSeconds)
+      onSubmit?.(title, category, selectedTags, priority, plannedSeconds, checklist)
     }
     resetForm()
   }
@@ -213,6 +232,50 @@ export function TaskForm({
               New tag
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {checklist.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {checklist.map((item) => (
+              <li key={item.id} className="flex items-center gap-2">
+                <span className="flex-1 truncate text-sm text-text">{item.text}</span>
+                <button
+                  type="button"
+                  onClick={() => removeChecklistItem(item.id)}
+                  aria-label="Remove checklist item"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-text-muted hover:text-text"
+                >
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newChecklistItem}
+            onChange={(e) => setNewChecklistItem(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addChecklistItem()
+              }
+            }}
+            placeholder="Add a checklist item"
+            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-text-muted"
+          />
+          <button
+            type="button"
+            onClick={addChecklistItem}
+            disabled={!newChecklistItem.trim()}
+            aria-label="Add checklist item"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:text-text disabled:opacity-40"
+          >
+            <Plus size={16} />
+          </button>
         </div>
       </div>
 

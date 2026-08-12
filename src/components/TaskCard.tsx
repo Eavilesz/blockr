@@ -17,6 +17,7 @@ export function TaskCard({
   onExtend,
   onFinish,
   onDelete,
+  onToggleChecklistItem,
 }: {
   task: Task
   running: Running | null
@@ -27,6 +28,7 @@ export function TaskCard({
   onExtend: (id: string) => void
   onFinish: (id: string) => void
   onDelete: (id: string) => void
+  onToggleChecklistItem: (taskId: string, itemId: string) => void
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
@@ -101,6 +103,35 @@ export function TaskCard({
           )
         )}
       </div>
+
+      {task.checklist.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {task.checklist.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => onToggleChecklistItem(task.id, item.id)}
+                className="flex w-full items-center gap-2 text-left"
+              >
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                    item.done ? `${styles.border} ${styles.bg}` : 'border-border'
+                  }`}
+                >
+                  {item.done && <Check size={12} className="text-bg" />}
+                </span>
+                <span
+                  className={`truncate text-sm ${
+                    item.done ? 'text-text-muted line-through' : 'text-text'
+                  }`}
+                >
+                  {item.text}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {!untimed && (
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">

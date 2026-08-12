@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { BlockrState, Category, Priority, Task } from '../types'
+import type { BlockrState, Category, ChecklistItem, Priority, Task } from '../types'
 import { DEFAULT_TAGS } from '../types'
 import { genId } from '../lib/id'
 import { dateStr } from '../lib/time'
@@ -61,6 +61,7 @@ function buildTask(
   tags: string[],
   priority: Priority,
   plannedSeconds: number | null,
+  checklist: ChecklistItem[] = [],
 ): Task {
   return {
     id: genId(),
@@ -72,6 +73,7 @@ function buildTask(
     timeSpentSeconds: 0,
     completed: false,
     createdAt: Date.now(),
+    checklist,
   }
 }
 
@@ -109,7 +111,12 @@ export function useBlockrState(userId: string | null) {
 
         skipNextSave.current = true
         if (data?.state) {
-          setState(data.state as BlockrState)
+          const loaded = data.state as BlockrState
+          // Back-fill `checklist` for tasks saved before the field existed.
+          setState({
+            ...loaded,
+            tasks: loaded.tasks.map((t) => ({ ...t, checklist: t.checklist ?? [] })),
+          })
         } else {
           const fresh = defaultState()
           setState(fresh)
@@ -176,10 +183,14 @@ export function useBlockrState(userId: string | null) {
       tags: string[],
       priority: Priority,
       plannedSeconds: number | null,
+      checklist: ChecklistItem[] = [],
     ) => {
       setState((prev) => ({
         ...prev,
-        tasks: [...prev.tasks, buildTask(title, category, tags, priority, plannedSeconds)],
+        tasks: [
+          ...prev.tasks,
+          buildTask(title, category, tags, priority, plannedSeconds, checklist),
+        ],
       }))
     },
     [],
@@ -196,18 +207,36 @@ export function useBlockrState(userId: string | null) {
       tags: string[],
       priority: Priority,
       plannedSeconds: number | null,
+      checklist: ChecklistItem[],
     ) => {
       setState((prev) => ({
         ...prev,
         tasks: prev.tasks.map((t) =>
           t.id === taskId
-            ? { ...t, title: title.trim(), category, tags, priority, plannedSeconds }
+            ? { ...t, title: title.trim(), category, tags, priority, plannedSeconds, checklist }
             : t,
         ),
       }))
     },
     [],
   )
+
+  /** Toggles one checklist item's done state on a task. */
+  const toggleChecklistItem = useCallback((taskId: string, itemId: string) => {
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              checklist: t.checklist.map((item) =>
+                item.id === itemId ? { ...item, done: !item.done } : item,
+              ),
+            }
+          : t,
+      ),
+    }))
+  }, [])
 
   /** Adds extra planned time to a task — the way to keep working past a completed plan
    *  without opening the edit form. Only meaningful for timed tasks. */
@@ -316,6 +345,7 @@ export function useBlockrState(userId: string | null) {
     loading,
     addTask,
     updateTask,
+    toggleChecklistItem,
     extendTask,
     finishTask,
     deleteTask,

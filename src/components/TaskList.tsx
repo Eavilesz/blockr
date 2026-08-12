@@ -15,6 +15,7 @@ export function TaskList({
   onExtend,
   onFinish,
   onDelete,
+  onToggleChecklistItem,
 }: {
   tasks: Task[]
   filter: CategoryFilterValue
@@ -26,6 +27,7 @@ export function TaskList({
   onExtend: (id: string) => void
   onFinish: (id: string) => void
   onDelete: (id: string) => void
+  onToggleChecklistItem: (taskId: string, itemId: string) => void
 }) {
   const filtered = tasks.filter((t) => filter === 'all' || t.category === filter)
   // Running task always first, then open tasks by priority (high first) then newest,
@@ -67,6 +69,7 @@ export function TaskList({
           onExtend={onExtend}
           onFinish={onFinish}
           onDelete={onDelete}
+          onToggleChecklistItem={onToggleChecklistItem}
         />
       ))}
     </div>
