@@ -98,8 +98,13 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
     setTaskModal({ open: false })
   }
 
-  function handleAddToBacklog(title: string, category: Category, priority: Priority) {
-    addBacklogItem(title, category, priority)
+  function handleAddToBacklog(
+    title: string,
+    category: Category,
+    priority: Priority,
+    checklist: ChecklistItem[],
+  ) {
+    addBacklogItem(title, category, priority, checklist)
     setTaskModal({ open: false })
   }
 

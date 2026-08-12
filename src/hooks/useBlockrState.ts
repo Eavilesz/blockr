@@ -112,10 +112,11 @@ export function useBlockrState(userId: string | null) {
         skipNextSave.current = true
         if (data?.state) {
           const loaded = data.state as BlockrState
-          // Back-fill `checklist` for tasks saved before the field existed.
+          // Back-fill `checklist` for tasks/backlog items saved before the field existed.
           setState({
             ...loaded,
             tasks: loaded.tasks.map((t) => ({ ...t, checklist: t.checklist ?? [] })),
+            backlog: loaded.backlog.map((b) => ({ ...b, checklist: b.checklist ?? [] })),
           })
         } else {
           const fresh = defaultState()
@@ -133,9 +134,11 @@ export function useBlockrState(userId: string | null) {
   }, [userId])
 
   // Debounce-persist every change back to Supabase, skipping the write that would
-  // otherwise immediately echo back the state we just loaded.
+  // otherwise immediately echo back the state we just loaded. Also skip entirely while
+  // the initial fetch is still in flight — otherwise the pre-fetch empty `defaultState()`
+  // can win a race against a slow fetch and overwrite real data with a blank slate.
   useEffect(() => {
-    if (!userId || !supabase) return
+    if (!userId || !supabase || loading) return
     if (skipNextSave.current) {
       skipNextSave.current = false
       return
@@ -152,7 +155,7 @@ export function useBlockrState(userId: string | null) {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
     }
-  }, [state, userId])
+  }, [state, userId, loading])
 
   // While a timer runs, tick every second: refresh `now` for live displays, and
   // auto-complete the task the instant it reaches its planned duration.
@@ -309,17 +312,20 @@ export function useBlockrState(userId: string | null) {
     )
   }, [])
 
-  const addBacklogItem = useCallback((title: string, category: Category, priority: Priority) => {
-    const trimmed = title.trim()
-    if (!trimmed) return
-    setState((prev) => ({
-      ...prev,
-      backlog: [
-        ...prev.backlog,
-        { id: genId(), title: trimmed, category, priority, createdAt: Date.now() },
-      ],
-    }))
-  }, [])
+  const addBacklogItem = useCallback(
+    (title: string, category: Category, priority: Priority, checklist: ChecklistItem[] = []) => {
+      const trimmed = title.trim()
+      if (!trimmed) return
+      setState((prev) => ({
+        ...prev,
+        backlog: [
+          ...prev.backlog,
+          { id: genId(), title: trimmed, category, priority, createdAt: Date.now(), checklist },
+        ],
+      }))
+    },
+    [],
+  )
 
   const deleteBacklogItem = useCallback((id: string) => {
     setState((prev) => ({ ...prev, backlog: prev.backlog.filter((b) => b.id !== id) }))
@@ -333,7 +339,10 @@ export function useBlockrState(userId: string | null) {
       if (!item) return prev
       return {
         ...prev,
-        tasks: [...prev.tasks, buildTask(item.title, item.category, [], item.priority, null)],
+        tasks: [
+          ...prev.tasks,
+          buildTask(item.title, item.category, [], item.priority, null, item.checklist ?? []),
+        ],
         backlog: prev.backlog.filter((b) => b.id !== backlogId),
       }
     })

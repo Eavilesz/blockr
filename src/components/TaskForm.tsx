@@ -34,7 +34,12 @@ export function TaskForm({
     plannedSeconds: number | null,
     checklist: ChecklistItem[],
   ) => void
-  onAddBacklog?: (title: string, category: Category, priority: Priority) => void
+  onAddBacklog?: (
+    title: string,
+    category: Category,
+    priority: Priority,
+    checklist: ChecklistItem[],
+  ) => void
   onSubmit?: (
     title: string,
     category: Category,
@@ -119,7 +124,7 @@ export function TaskForm({
 
   function handleAddBacklog() {
     if (!title.trim()) return
-    onAddBacklog?.(title, category, priority)
+    onAddBacklog?.(title, category, priority, checklist)
     resetForm()
   }
 

@@ -51,6 +51,7 @@ export interface BacklogItem {
   category: Category
   priority: Priority
   createdAt: number
+  checklist: ChecklistItem[]
 }
 
 export interface BlockrState {
