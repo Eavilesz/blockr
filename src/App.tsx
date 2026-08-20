@@ -66,6 +66,7 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
   useTabTitle(state, now)
   const [tab, setTab] = useState<TabValue>('tasks')
   const [filter, setFilter] = useState<CategoryFilterValue>('all')
+  const [showDone, setShowDone] = useState(false)
   const [taskModal, setTaskModal] = useState<TaskModalState>({ open: false })
 
   if (loading) {
@@ -161,10 +162,25 @@ function TaskTracker({ userId, onSignOut }: { userId: string; onSignOut: () => v
       {tab === 'tasks' && (
         <>
           <TodaySummary state={state} now={now} />
-          <CategoryFilter value={filter} onChange={setFilter} />
+          <div className="flex items-center justify-between gap-2">
+            <CategoryFilter value={filter} onChange={setFilter} />
+            <button
+              type="button"
+              aria-pressed={showDone}
+              onClick={() => setShowDone((v) => !v)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                showDone
+                  ? 'border-text text-text'
+                  : 'border-border text-text-muted hover:text-text'
+              }`}
+            >
+              Done
+            </button>
+          </div>
           <TaskList
             tasks={state.tasks}
             filter={filter}
+            showDone={showDone}
             running={state.running}
             now={now}
             onStart={startTask}

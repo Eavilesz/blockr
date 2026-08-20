@@ -7,6 +7,7 @@ import { TaskCard } from './TaskCard'
 export function TaskList({
   tasks,
   filter,
+  showDone,
   running,
   now,
   onStart,
@@ -19,6 +20,7 @@ export function TaskList({
 }: {
   tasks: Task[]
   filter: CategoryFilterValue
+  showDone: boolean
   running: Running | null
   now: number
   onStart: (id: string) => void
@@ -29,7 +31,11 @@ export function TaskList({
   onDelete: (id: string) => void
   onToggleChecklistItem: (taskId: string, itemId: string) => void
 }) {
-  const filtered = tasks.filter((t) => filter === 'all' || t.category === filter)
+  const filtered = tasks.filter((t) => {
+    if (filter !== 'all' && t.category !== filter) return false
+    if (!showDone && isCompleted(t) && running?.taskId !== t.id) return false
+    return true
+  })
   // Running task always first, then open tasks by priority (high first) then newest,
   // with completed tasks pushed to the bottom so the active work stays in view.
   const sorted = [...filtered].sort((a, b) => {
